@@ -273,9 +273,26 @@
             .auth-left { display: none; }
             .auth-right { flex: 1; min-height: 100dvh; align-items: stretch; justify-content: center; padding: 28px clamp(18px, 5vw, 28px); background: transparent; }
             .auth-form-wrapper { max-width: 430px; margin: 0 auto; }
-            .auth-mobile-brand { display: block; margin: 0 0 22px; color: var(--brand-orange); font-size: 1.1rem; font-weight: 800; }
+            .auth-mobile-brand { display: block; margin: 0 0 22px; color: var(--brand-orange); font-size: 1.1rem; font-weight: 800; text-decoration: none; }
             .auth-header-row { display: none; }
-            .auth-mobile-switch { display: block; width: 100%; min-height: 46px; margin-top: 12px; border: 1px solid var(--border-color); border-radius: 999px; background: #202020; padding: 11px; color: white; text-align: center; font-size: .875rem; font-weight: 600; }
+            
+            /* Added text-decoration: none here to fix the underline */
+            .auth-mobile-switch { 
+                display: block; 
+                width: 100%; 
+                min-height: 46px; 
+                margin-top: 12px; 
+                border: 1px solid var(--border-color); 
+                border-radius: 999px; 
+                background: #202020; 
+                padding: 11px; 
+                color: white; 
+                text-align: center; 
+                font-size: .875rem; 
+                font-weight: 600; 
+                text-decoration: none; 
+            }
+            
             .form-group { margin-bottom: 17px; }
             .form-group label { font-size: .85rem; }
             .form-input, input[type="text"], input[type="email"], input[type="password"] { min-height: 48px; padding: 12px 14px; font-size: 16px; }
