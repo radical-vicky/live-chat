@@ -106,13 +106,23 @@
     color: #000;
 }
 
-/* Dark overlay for card text */
+/* Dark overlay for card text readability */
 .session-card::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 60%);
+    background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0) 100%);
     z-index: 1;
+}
+
+/* Perfect card image fit */
+.session-card-img {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Changed to cover so it fills the card beautifully */
 }
 
 .session-title {
@@ -122,9 +132,10 @@
     font-weight: 700;
     color: white;
     line-height: 1.2;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8); /* Added text shadow for extra readability */
 }
 
-/* Card background colors */
+/* Card background colors (Fallbacks) */
 .bg-blue { background: linear-gradient(135deg, #1E3A8A 0%, #000 100%); }
 .bg-teal { background: linear-gradient(135deg, #0F766E 0%, #000 100%); }
 .bg-red { background: linear-gradient(135deg, #991B1B 0%, #000 100%); }
@@ -154,8 +165,26 @@
     overflow: hidden;
     background: linear-gradient(135deg, #1D4ED8 0%, #000 100%);
 }
-.live-now-thumbnail { position:absolute; inset:0; z-index:0; width:100%; height:100%; border-radius:inherit; object-fit:cover; }
-.live-thumb::after,.mobile-live-thumb::after { position:absolute; z-index:1; inset:0; border-radius:inherit; background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.35)); content:""; pointer-events:none; }
+
+/* Perfect thumbnail fit */
+.live-now-thumbnail { 
+    position: absolute; 
+    inset: 0; 
+    z-index: 0; 
+    width: 100%; 
+    height: 100%; 
+    border-radius: inherit; 
+    object-fit: cover; /* Changed to cover so it fills the space perfectly */
+}
+.live-thumb::after, .mobile-live-thumb::after { 
+    position: absolute; 
+    z-index: 1; 
+    inset: 0; 
+    border-radius: inherit; 
+    background: linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.45)); 
+    content: ""; 
+    pointer-events: none; 
+}
 .live-thumb .session-badge { top: 0.25rem; left: 0.25rem; }
 .live-info h4 { font-size: 0.8rem; font-weight: 600; margin-bottom: 0.2rem; }
 .live-info p { font-size: 0.7rem; color: var(--text-muted); }
@@ -167,7 +196,9 @@
 .mobile-live-now { display:none; }
 .mobile-hero-title{display:none}
 .session-grid>.text-muted,.mobile-live-grid>.text-muted{grid-column:1/-1;margin:0;padding:1rem 1.1rem;border:1px dashed #343434;border-radius:12px;background:#121212;color:var(--text-muted);font-size:.9rem;line-height:1.55}
+
 @media(max-width:1100px){.mobile-live-now{display:block}}
+
 @media(max-width:760px){
   .hero-banner{min-height:0;align-items:flex-start;padding:22px 18px;border-radius:14px;background:linear-gradient(135deg,#bd4e00 0%,#080808 95%)}
   .hero-banner::before{display:none}
@@ -225,6 +256,7 @@
 <div class="session-grid">
     {% for session in trending %}
     <a href="{% url 'session_detail' session.room_name %}" class="session-card bg-blue">
+        {% if session.thumbnail %}<img class="session-card-img" src="{{ session.thumbnail.url }}" alt="" loading="lazy">{% endif %}
         <span class="session-badge {% if session.status == 'scheduled' %}free{% endif %}">{{ session.get_status_display|upper }}</span>
         <span class="session-title">{{ session.title }}</span>
     </a>
@@ -238,6 +270,7 @@
 <div class="session-grid">
     {% for session in my_scheduled %}
     <a href="{% url 'session_detail' session.room_name %}" class="session-card bg-indigo">
+        {% if session.thumbnail %}<img class="session-card-img" src="{{ session.thumbnail.url }}" alt="" loading="lazy">{% endif %}
         <span class="session-badge free">UPCOMING</span>
         <span class="session-title">{{ session.title }}</span>
     </a>
