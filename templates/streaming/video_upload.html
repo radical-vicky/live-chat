@@ -1,0 +1,265 @@
+{% extends "base_app.html" %}
+{% block title %}Upload video — RADEV LIVE{% endblock %}
+{% block body_class %}video-upload-view{% endblock %}
+{% block extra_css %}
+.video-upload-page{width:100%;max-width:760px;margin:0 auto}
+.video-upload-page h1{font-size:1.35rem}
+.video-upload-page>p{margin:.4rem 0 1.2rem;color:#aaa;font-size:.82rem}
+.video-upload-form{display:grid;gap:1rem;padding:1.2rem;border:1px solid #252525;border-radius:12px;background:#141414}
+.video-upload-form label{display:block;margin-bottom:.35rem;color:#c5c5c5;font-size:.75rem;font-weight:600}
+.video-upload-form .form-input{width:100%;padding:.7rem .8rem;border:1px solid #303030;border-radius:7px;background:#0c0c0c;color:white}
+.video-upload-form textarea{min-height:110px;resize:vertical}
+.video-upload-error{padding:.65rem .75rem;border-radius:7px;background:#321819;color:#ffb4b4;font-size:.75rem}
+.upload-drop-zone{display:grid;min-height:180px;place-items:center;gap:.5rem;border:1px dashed #555;border-radius:10px;background:#101010;padding:1.2rem;text-align:center;transition:border-color .15s,background .15s}
+.upload-drop-zone.drag-over{border-color:#ff7800;background:#1a130d}
+.upload-drop-zone p{color:#aaa;font-size:.75rem}
+.upload-choose-button,.video-save-button{border:0;border-radius:999px;background:#ff7800;color:#111;padding:.7rem 1rem;font-size:.78rem;font-weight:700}
+.video-file-input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;clip-path:inset(50%)}
+.upload-actions{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+.video-save-button:disabled{opacity:.45;cursor:not-allowed}
+.upload-status{color:#aaa;font-size:.72rem;overflow-wrap:anywhere}
+.upload-progress{width:100%;height:8px;accent-color:#ff7800}
+.video-upload-note{color:#888;font-size:.68rem;line-height:1.5}
+@media(max-width:600px){.video-upload-page h1{font-size:1.05rem}.video-upload-form{padding:.85rem}.upload-actions{align-items:stretch;flex-direction:column}.upload-choose-button,.video-save-button{width:100%}.upload-drop-zone{min-height:145px}}
+{% endblock %}
+{% block content %}
+<main class="video-upload-page">
+  <h1>Upload a video</h1>
+  <p>Videos you upload are public and will appear in the video library and on your profile.</p>
+  {% if not cloudinary_configured %}
+  <div class="video-upload-error" role="alert">Video uploads are not configured on this server. Contact the site administrator.</div>
+  {% endif %}
+  <form class="video-upload-form" method="post" id="video-upload-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="video-upload-error" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+    <input type="hidden" name="public_id" id="video-public-id" value="{{ uploaded_public_id }}">
+    <div>
+      <label for="{{ form.title.id_for_label }}">Video title</label>
+      {{ form.title }}
+      {% if form.title.errors %}<div class="video-upload-error">{{ form.title.errors }}</div>{% endif %}
+    </div>
+    <div>
+      <label for="{{ form.description.id_for_label }}">Description (optional)</label>
+      {{ form.description }}
+      {% if form.description.errors %}<div class="video-upload-error">{{ form.description.errors }}</div>{% endif %}
+    </div>
+    {% if cloudinary_configured %}
+    <div class="upload-drop-zone" id="video-drop-zone">
+      <p id="video-file-name">Drag and drop an MP4 or WebM video here</p>
+      <button class="upload-choose-button" id="video-choose" type="button">Choose video</button>
+      <input class="video-file-input" type="file" id="video-file-input" accept="video/mp4,video/webm">
+    </div>
+    <progress class="upload-progress" id="video-upload-progress" max="100" value="0" aria-label="Upload progress"></progress>
+    {% endif %}
+    <div class="upload-actions">
+      <button class="video-save-button" id="video-save" type="submit" disabled>Publish video</button>
+      <span class="upload-status" id="video-upload-status" role="status" aria-live="polite">Choose an MP4 or WebM video to get started.</span>
+    </div>
+    <p class="video-upload-note">MP4 and WebM videos up to 1 GB are supported. Your video uploads directly from this page, with progress shown here.</p>
+  </form>
+</main>
+{% if cloudinary_configured %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("video-upload-form");
+  const chooseButton = document.getElementById("video-choose");
+  const fileInput = document.getElementById("video-file-input");
+  const dropZone = document.getElementById("video-drop-zone");
+  const fileName = document.getElementById("video-file-name");
+  const saveButton = document.getElementById("video-save");
+  const status = document.getElementById("video-upload-status");
+  const progress = document.getElementById("video-upload-progress");
+  const publicId = document.getElementById("video-public-id");
+  const csrfToken = form.querySelector("[name=csrfmiddlewaretoken]").value;
+  const cloudName = "{{ cloudinary_cloud_name|escapejs }}";
+  const apiKey = "{{ cloudinary_api_key|escapejs }}";
+  const maxFileSize = {{ max_video_size }};
+  const singleRequestLimit = 100 * 1024 * 1024;
+  const chunkSize = 20 * 1024 * 1024;
+  let isUploading = false;
+
+  if (publicId.value) {
+    saveButton.disabled = false;
+    status.textContent = "Upload received. Correct the details and publish your video.";
+  }
+
+  async function getUploadAuthorization(existingPublicId) {
+    const response = await fetch("{% url 'video_upload_signature' %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken
+      },
+      body: JSON.stringify(existingPublicId ? {public_id: existingPublicId} : {})
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || "Could not prepare the upload.");
+    }
+    return result;
+  }
+
+  function uploadPart(file, start, end, uploadId, authorization, chunked) {
+    return new Promise(function (resolve, reject) {
+      const request = new XMLHttpRequest();
+      const uploadUrl = "https://api.cloudinary.com/v1_1/" + encodeURIComponent(cloudName) + "/video/upload";
+      const chunk = file.slice(start, end + 1);
+      const data = new FormData();
+
+      data.append("file", chunk, file.name);
+      data.append("public_id", authorization.public_id);
+      data.append("timestamp", authorization.timestamp);
+      data.append("api_key", apiKey);
+      data.append("signature", authorization.signature);
+
+      request.open("POST", uploadUrl);
+      if (chunked) {
+        request.setRequestHeader("X-Unique-Upload-Id", uploadId);
+        request.setRequestHeader("Content-Range", "bytes " + start + "-" + end + "/" + file.size);
+      }
+      request.upload.addEventListener("progress", function (event) {
+        if (event.lengthComputable) {
+          progress.value = Math.min(100, Math.round(
+            ((start + event.loaded) / file.size) * 100
+          ));
+        }
+      });
+      request.addEventListener("load", function () {
+        let result;
+        try {
+          result = JSON.parse(request.responseText);
+        } catch (error) {
+          reject(new Error("The upload service returned an unreadable response."));
+          return;
+        }
+        if (request.status < 200 || request.status >= 300) {
+          const message = result.error && result.error.message;
+          reject(new Error(message || "Upload failed (HTTP " + request.status + ")."));
+          return;
+        }
+        resolve(result);
+      });
+      request.addEventListener("error", function () {
+        reject(new Error("Network error while uploading. Check your connection and try again."));
+      });
+      request.addEventListener("abort", function () {
+        reject(new Error("The upload was interrupted."));
+      });
+      request.send(data);
+    });
+  }
+
+  function newUploadId() {
+    if (window.crypto && window.crypto.randomUUID) {
+      return window.crypto.randomUUID();
+    }
+    return Date.now() + "-" + Math.random().toString(16).slice(2);
+  }
+
+  async function uploadFile(file) {
+    const extension = file.name.split(".").pop().toLowerCase();
+    if (["mp4", "webm"].indexOf(extension) === -1) {
+      throw new Error("Choose an MP4 or WebM video.");
+    }
+    if (file.size < 1 || file.size > maxFileSize) {
+      throw new Error("Choose a video up to 1 GB.");
+    }
+
+    isUploading = true;
+    fileInput.disabled = true;
+    chooseButton.disabled = true;
+    saveButton.disabled = true;
+    publicId.value = "";
+    progress.value = 0;
+    fileName.textContent = file.name;
+    status.textContent = "Preparing a secure upload...";
+
+    try {
+      const firstAuthorization = await getUploadAuthorization();
+      const uploadId = newUploadId();
+      const chunked = file.size > singleRequestLimit;
+      let start = 0;
+      let part = 0;
+      let uploadedAsset;
+      const totalParts = chunked ? Math.ceil(file.size / chunkSize) : 1;
+      let authorization = firstAuthorization;
+
+      while (start < file.size) {
+        const end = chunked
+          ? Math.min(start + chunkSize, file.size) - 1
+          : file.size - 1;
+        if (Date.now() >= (authorization.timestamp * 1000) + (45 * 60 * 1000)) {
+          authorization = await getUploadAuthorization(firstAuthorization.public_id);
+        }
+        status.textContent = chunked
+          ? "Uploading part " + (part + 1) + " of " + totalParts + "..."
+          : "Uploading your video...";
+        uploadedAsset = await uploadPart(
+          file,
+          start,
+          end,
+          uploadId,
+          authorization,
+          chunked
+        );
+        start = end + 1;
+        part += 1;
+      }
+
+      if (
+        !uploadedAsset
+        || (chunked && uploadedAsset.done !== true)
+        || uploadedAsset.public_id !== firstAuthorization.public_id
+      ) {
+        throw new Error("The video upload did not finish. Please try again.");
+      }
+      publicId.value = uploadedAsset.public_id;
+      progress.value = 100;
+      saveButton.disabled = false;
+      status.textContent = "Upload complete. Publish the video when you're ready.";
+    } finally {
+      isUploading = false;
+      fileInput.disabled = false;
+      chooseButton.disabled = false;
+    }
+  }
+
+  async function handleFile(file) {
+    if (!file || isUploading) return;
+    try {
+      await uploadFile(file);
+    } catch (error) {
+      publicId.value = "";
+      saveButton.disabled = true;
+      status.textContent = error.message;
+    }
+  }
+
+  chooseButton.addEventListener("click", function () {
+    fileInput.click();
+  });
+  fileInput.addEventListener("change", function () {
+    handleFile(fileInput.files[0]);
+  });
+  dropZone.addEventListener("dragover", function (event) {
+    event.preventDefault();
+    dropZone.classList.add("drag-over");
+  });
+  dropZone.addEventListener("dragleave", function () {
+    dropZone.classList.remove("drag-over");
+  });
+  dropZone.addEventListener("drop", function (event) {
+    event.preventDefault();
+    dropZone.classList.remove("drag-over");
+    handleFile(event.dataTransfer.files[0]);
+  });
+  form.addEventListener("submit", function (event) {
+    if (!publicId.value) {
+      event.preventDefault();
+      status.textContent = "Choose and upload a video before publishing.";
+    }
+  });
+});
+</script>
+{% endif %}
+{% endblock %}

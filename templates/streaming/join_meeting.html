@@ -1,0 +1,25 @@
+{% extends "base_app.html" %}
+{% block title %}Join meeting — RADEV LIVE{% endblock %}
+{% block body_class %}join-meeting-view{% endblock %}
+{% block extra_css %}
+.join-wrap { min-height: calc(100vh - 140px); display:grid; place-items:center; }
+.join-card { width:min(380px,100%); text-align:center; }
+.join-card h1 { font-size:1.25rem; margin-bottom:.5rem; }
+.join-card p { color:var(--text-muted); font-size:.78rem; margin-bottom:1.25rem; }
+.join-card input { width:100%; margin:.25rem 0; padding:.72rem .9rem; border:1px solid var(--border-color); border-radius:.45rem; background:#18182a; color:white; }
+.join-note { color:#aaaab7;font-size:.68rem;text-align:left;margin:.7rem 0 1rem; }
+.join-card .join-button { width:100%; border:0; border-radius:999px; padding:.75rem; background:var(--brand-orange); color:white; font-weight:700; }
+@media(max-width:760px){.join-wrap{min-height:calc(100dvh - 130px)}.join-card{padding:16px;border:1px solid #252525;border-radius:10px;background:#151515;text-align:left}.join-card h1{font-size:.9rem}.join-card p{font-size:.55rem;margin-bottom:10px}.join-card input{padding:8px 9px;border-radius:7px;background:#0d0d0d;font-size:.57rem}.join-note{font-size:.51rem}.join-card .join-button{padding:8px;font-size:.56rem}}
+{% endblock %}
+{% block content %}
+<div class="join-wrap">
+  <form class="join-card" method="post" action="#">
+    {% csrf_token %}
+    <h1>Join a session</h1>
+    <p>Enter a meeting code or paste an invite link.</p>
+    <input name="code" placeholder="Meeting code or link">
+    <p class="join-note">You'll choose camera and microphone settings after entering the room.</p>
+    <button class="join-button" type="submit">Join now</button>
+  </form>
+</div>
+{% endblock %}

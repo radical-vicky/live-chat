@@ -1,0 +1,76 @@
+{% extends "base_app.html" %}
+{% block title %}Explore — RADEV LIVE{% endblock %}
+{% block body_class %}explore-view{% endblock %}
+{% block extra_css %}
+.page-title { font-size: 1.15rem; margin-bottom: 1.25rem; }
+.category-tabs { display:flex; gap:.45rem; margin-bottom:1.25rem; }
+.category-tabs a { padding:.45rem .8rem; border-radius:999px; background:#16162a; font-size:.72rem; }
+.category-tabs a.active { background:#d96b12; color:#fff; }
+.category-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.75rem; margin-bottom:1.75rem; }
+.category { height:76px; border-radius:8px; display:flex; align-items:flex-end; padding:.55rem; background:linear-gradient(135deg,#163a78,#0a0a16); font-weight:700; font-size:.72rem; }
+.category:nth-child(2n) { background:linear-gradient(135deg,#087586,#111128); }
+.category:nth-child(3n) { background:linear-gradient(135deg,#801d24,#111128); }
+.session-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:.7rem; }
+.session-card { height:150px; border-radius:7px; overflow:hidden; position:relative; display:flex; align-items:flex-end; padding:.55rem; background:linear-gradient(135deg,#1749a1,#090915); }
+.session-card:nth-child(3n) { background:linear-gradient(135deg,#8f1d2e,#090915); }
+.session-card:nth-child(4n) { background:linear-gradient(135deg,#9c4a1b,#090915); }
+.session-card:nth-child(5n) { background:linear-gradient(135deg,#4d2d8d,#090915); }
+.session-thumbnail { position:absolute; inset:0; z-index:0; width:100%; height:100%; object-fit:cover; }
+.session-card::after { position:absolute; z-index:0; inset:0; background:linear-gradient(180deg,rgba(0,0,0,.08) 25%,rgba(0,0,0,.76) 100%); content:""; pointer-events:none; }
+.session-card span { position:relative; z-index:1; font-size:.68rem; font-weight:700; line-height:1.15; }
+.live-tag { position:absolute!important; z-index:2!important; top:.5rem; left:.5rem; background:#f24a45!important; color:white; padding:.12rem .34rem; border-radius:3px; font-size:.48rem!important; }
+.preview-section-title{font-size:.78rem;margin:1.5rem 0 .7rem}.preview-tag{position:absolute;top:.5rem;left:.5rem;background:#d96b12;padding:.12rem .34rem;border-radius:3px;font-size:.48rem;color:#fff}
+@media(max-width:1100px){ .session-grid{grid-template-columns:repeat(3,1fr)} .category-grid{grid-template-columns:repeat(2,1fr)} }
+@media(max-width:900px){
+  .category-tabs{overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+  .category-tabs::-webkit-scrollbar{display:none}
+  .category-tabs a{flex:0 0 auto}
+}
+@media(max-width:760px){
+  .page-title{font-size:.92rem;margin:0 0 .45rem}
+  .category-tabs{gap:5px;margin-bottom:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+  .category-tabs::-webkit-scrollbar{display:none}
+  .category-tabs a{flex:0 0 auto;padding:5px 9px;font-size:.55rem}
+  .category-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:12px}
+  .category{height:60px;border-radius:6px;padding:7px;font-size:.62rem}
+  .session-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .session-card{height:92px;border-radius:6px;padding:5px}
+  .session-card span{font-size:.52rem}
+  .live-tag{top:4px;left:4px;padding:2px 4px;font-size:.4rem!important}
+  .preview-section-title{font-size:.68rem;margin:12px 0 5px}.preview-tag{top:4px;left:4px;padding:2px 4px;font-size:.4rem}
+  .trending-title{font-size:.72rem!important;margin-bottom:5px!important}
+}
+{% endblock %}
+{% block content %}
+<h1 class="page-title">Explore</h1>
+<div class="category-tabs">
+    <a href="{% url 'explore_sessions' %}" class="{% if not category %}active{% endif %}">All</a>
+    {% for value, label in categories %}<a href="?category={{ value }}{% if query %}&q={{ query|urlencode }}{% endif %}" class="{% if category == value %}active{% endif %}">{{ label }}</a>{% endfor %}
+</div>
+<div class="category-grid">
+    {% for value, label in categories %}<a class="category" href="?category={{ value }}">{{ label }}</a>{% endfor %}
+</div>
+<h2 class="trending-title" style="font-size:.78rem;margin-bottom:.7rem">Trending now</h2>
+<div class="session-grid">
+{% for session in sessions %}
+<a class="session-card" href="{% url 'session_detail' session.room_name %}">
+    {% if session.thumbnail %}<img class="session-thumbnail" src="{{ session.thumbnail.url }}" alt="" loading="lazy">{% endif %}
+    <span class="live-tag">{% if session.status == 'live' %}LIVE{% else %}Free{% endif %}</span>
+    <span class="session-card-title">{{ session.title }}</span>
+</a>
+{% empty %}
+<p class="text-muted">{% if query %}No sessions matched “{{ query }}”.{% else %}No public live or upcoming sessions yet.{% endif %}</p>
+{% endfor %}
+</div>
+<h2 class="preview-section-title">Replay previews</h2>
+<div class="session-grid">
+{% for session in previews %}
+<a class="session-card" href="{% url 'session_detail' session.room_name %}"{% if session.thumbnail %} style="background-image:linear-gradient(0deg,rgba(0,0,0,.8),rgba(0,0,0,.1)),url('{{ session.thumbnail.url }}');background-size:cover;background-position:center"{% endif %}>
+    <span class="preview-tag">REPLAY</span>
+    <span>{{ session.title }}<small style="display:block;color:#ddd;font-size:.52rem;margin-top:3px">{{ session.host.profile.full_name|default:session.host.get_username }}</small></span>
+</a>
+{% empty %}
+<p class="text-muted">No public replay previews yet.</p>
+{% endfor %}
+</div>
+{% endblock %}

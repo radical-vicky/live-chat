@@ -1,0 +1,38 @@
+{% extends "account/base_auth.html" %}
+
+{% block title %}Log in — RADEV LIVE{% endblock %}
+
+{% block auth_content %}
+    <form method="POST" action="{% url 'account_login' %}">
+        {% csrf_token %}
+        <p style="margin-bottom: 1.15rem; color: #A1A1AA; font-size: .85rem;">Log in to start or join live sessions.</p>
+        
+        {% if form.non_field_errors %}
+            <div class="errorlist" style="margin-bottom: 1rem;">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="id_login">Email</label>
+            <input type="email" name="login" placeholder="you@example.com" class="form-input" id="id_login" required>
+            {{ form.login.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_password">Password</label>
+            <input type="password" name="password" placeholder="Password" class="form-input" id="id_password" required>
+            {{ form.password.errors }}
+        </div>
+
+        {% if redirect_field_value %}
+            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+
+        <button type="submit" class="btn-submit">Log in</button>
+        <a href="{% url 'account_signup' %}" class="auth-mobile-switch">Register</a>
+        <p style="text-align:center;font-size:.8rem;color:#A1A1AA">
+            <a href="{% url 'account_reset_password' %}" style="color:#F97316">Forgot your password?</a>
+        </p>
+    </form>
+{% endblock %}

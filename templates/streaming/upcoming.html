@@ -1,0 +1,14 @@
+{% extends "base_app.html" %}
+{% block title %}Upcoming — RADEV LIVE{% endblock %}
+{% block body_class %}upcoming-view{% endblock %}
+{% block extra_css %}
+.page-title{font-size:1.15rem;margin-bottom:1.25rem}.session-row{display:grid;grid-template-columns:70px 1fr 110px;align-items:center;background:#17182b;border-radius:8px;padding:.55rem .8rem;margin-bottom:.55rem}.date{font-size:.65rem;color:#d5d5df}.date strong{display:block;font-size:1.15rem}.row-title{font-size:.72rem;font-weight:700}.row-title small{display:block;color:#a1a1b5;font-weight:400}.remind{justify-self:end;border:0;border-radius:999px;background:#e27918;color:white;padding:.42rem .75rem;font-size:.68rem;cursor:pointer}
+@media(max-width:760px){.page-title{font-size:.9rem;margin-bottom:.6rem}.session-row{grid-template-columns:38px minmax(0,1fr) auto;gap:7px;min-height:51px;margin-bottom:6px;border:1px solid #252525;border-radius:7px;background:#151515;padding:6px}.date{font-size:.5rem}.date strong{font-size:.8rem}.row-title{font-size:.58rem}.row-title small{font-size:.48rem;line-height:1.25}.remind{padding:6px 8px;font-size:.5rem}}
+{% endblock %}
+{% block content %}
+<h1 class="page-title">Upcoming sessions</h1>
+{% for session in sessions %}
+<div class="session-row"><div class="date">{% if session.scheduled_at %}{{ session.scheduled_at|date:"M" }}<strong>{{ session.scheduled_at|date:"d" }}</strong>{% else %}TBD{% endif %}</div><div class="row-title"><a href="{% url 'session_detail' session.room_name %}">{{ session.title }}</a><small>{{ session.host.profile.full_name|default:session.host.get_username }} · {{ session.get_category_display }} · {% if session.scheduled_at %}{{ session.scheduled_at|date:"g:i A" }}{% else %}Time not set{% endif %}</small></div><form method="post" action="{% url 'toggle_reminder' session.room_name %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'upcoming_sessions' %}"><button class="remind" type="submit">{% if session.pk in reminder_session_ids %}Cancel reminder{% else %}Remind me{% endif %}</button></form></div>
+{% empty %}<p class="text-muted">No public sessions are scheduled yet.</p>
+{% endfor %}
+{% endblock %}

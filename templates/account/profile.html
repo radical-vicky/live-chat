@@ -1,0 +1,203 @@
+{% extends "base_app.html" %}
+{% block title %}{% if is_owner %}Profile{% else %}{{ profile.full_name|default:profile_user.get_username }}{% endif %} — RADEV LIVE{% endblock %}
+{% block body_class %}profile-view{% endblock %}
+{% block extra_css %}
+.page-container{grid-template-columns:190px minmax(0,1fr);gap:1.5rem;max-width:1440px;padding:1rem 2rem}
+.right-sidebar{display:none}
+.main-feed{gap:0}
+.profile-page{width:100%;max-width:1120px;margin:0 auto}
+.profile-page h1{font-size:1.1rem;margin:0 0 .85rem}
+.profile-card{display:flex;align-items:center;gap:1rem;min-height:88px;padding:1rem;border:1px solid #252525;border-radius:9px;background:#151515}
+.profile-avatar{width:60px;height:60px;flex:0 0 60px;overflow:hidden;border-radius:50%;background:linear-gradient(135deg,#2461d8,#061843)}
+.profile-avatar img{width:100%;height:100%;object-fit:cover}
+.profile-name{min-width:0;flex:1}
+.profile-name h2{font-size:.95rem}
+.profile-name p{margin-top:.1rem;color:#aaa;font-size:.7rem}
+.profile-stats{display:flex;gap:1.1rem}
+.profile-stat{min-width:48px;text-align:center}
+.profile-stat strong{display:block;font-size:.95rem;line-height:1.1}
+.profile-stat span{display:block;margin-top:.15rem;color:#aaa;font-size:.62rem}
+.edit-profile{white-space:nowrap;border:0;border-radius:999px;background:#ff7800;color:#fff;padding:.48rem .8rem;font-size:.68rem;font-weight:700}
+.profile-follow-form{margin:0}
+.profile-tabs{display:flex;gap:.4rem;margin:.55rem 0 .7rem}
+.profile-tabs a{padding:.3rem .6rem;border-radius:999px;background:#171717;color:#ddd;font-size:.65rem}
+.profile-tabs a.active{background:#ff7800;color:#fff}
+.profile-section-heading{margin:1rem 0 .55rem;font-size:.9rem}
+.profile-sessions{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.55rem}
+.profile-session{position:relative;display:flex;height:148px;align-items:flex-end;overflow:hidden;border-radius:5px;padding:.42rem;background:linear-gradient(135deg,#1850b6,#090d1a);font-size:.76rem;font-weight:700}
+.profile-session img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.profile-session:nth-child(6n+2){background:linear-gradient(135deg,#0b8078,#091a1a)}
+.profile-session:nth-child(6n+3){background:linear-gradient(135deg,#b92528,#1a0b0b)}
+.profile-session:nth-child(6n+4){background:linear-gradient(135deg,#a04a0d,#1b1006)}
+.profile-session:nth-child(6n+5){background:linear-gradient(135deg,#1d367e,#0b0f1b)}
+.profile-session:nth-child(6n){background:linear-gradient(135deg,#4433bd,#100b2b)}
+.profile-session:before{position:absolute;inset:30% 0 0;background:linear-gradient(transparent,rgba(0,0,0,.8));content:"";pointer-events:none}
+.profile-session span{position:relative;z-index:1}
+.video-status{background:#ff7800;color:#111}
+.session-status{position:absolute!important;top:.3rem;left:.3rem;padding:.1rem .24rem;border-radius:2px;background:#e33131;font-size:.58rem}
+.session-status.scheduled{background:#fff;color:#111}
+.session-status.replay{background:#7437d1;color:#fff}
+.profile-about,.profile-settings{max-width:700px;padding:1rem;border:1px solid #252525;border-radius:9px;background:#151515}
+.profile-about p{margin:.5rem 0;color:#b4b4bf;font-size:.72rem}
+.profile-settings .field{margin-bottom:.8rem}
+.profile-settings label{display:block;margin-bottom:.3rem;color:#b4b4bf;font-size:.65rem}
+.profile-settings .form-input{width:100%;padding:.65rem .75rem;border:1px solid #292a35;border-radius:6px;background:#0d0d0d;color:white}
+.profile-settings textarea{min-height:100px}
+.profile-settings button{border:0;border-radius:999px;background:#ff7800;color:white;padding:.5rem .85rem;font-size:.65rem;font-weight:700}
+.profile-error{color:#f87171;font-size:.62rem}
+.empty-sessions{grid-column:1/-1;padding:.75rem 0;color:#aaa;font-size:.72rem}
+.profile-video-heading{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin:.75rem 0 .55rem}
+.profile-video-heading h2{font-size:.9rem}
+.profile-video-actions{display:flex;align-items:center;gap:.5rem}
+.profile-video-actions a{padding:.4rem .65rem;border:1px solid #333;border-radius:999px;color:#ddd;font-size:.62rem}
+.profile-video-actions a:hover{border-color:#ff7800;color:#ff7800}
+.profile-video-actions a.profile-upload-link{border-color:#ff7800;background:#ff7800;color:#111;font-weight:700}
+.profile-videos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem 1.25rem}
+.profile-video{min-width:0;color:#eee}
+.profile-video-thumb{position:relative;display:block;aspect-ratio:16/9;overflow:hidden;border:1px solid #30343a;background:#080808}
+.profile-video-thumb img{width:100%;height:100%;object-fit:cover}
+.profile-video-views{position:absolute;right:.4rem;bottom:.3rem;color:#fff;font-size:.7rem;font-weight:700;text-shadow:0 1px 5px #000}
+.profile-video-title{display:block;overflow:hidden;margin-top:.4rem;font-size:.72rem;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+.mobile-nav-label{display:none}
+@media(max-width:1100px){.profile-sessions{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:760px){
+  body.profile-view{min-height:100dvh}
+  body.profile-view .topbar{display:none}
+  body.profile-view .page-container{display:block;min-height:100dvh;padding:12px 10px 68px}
+  body.profile-view .sidebar{position:fixed;z-index:300;right:16px;bottom:10px;left:16px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;height:40px;overflow:hidden;padding:4px;border:1px solid #ff7900;border-radius:999px;background:#101010}
+  body.profile-view .sidebar-item:not(.mobile-nav-item){display:none}
+  body.profile-view .sidebar-item.mobile-nav-item{display:flex;min-width:0;flex:1;justify-content:center;gap:0;padding:0;border-radius:999px;background:transparent;color:#aaa;font-size:.52rem;font-weight:500;white-space:nowrap}
+  body.profile-view .sidebar-item.mobile-nav-item svg{display:none}
+  body.profile-view .sidebar-item.mobile-go-live{background:#ff7900;color:#111;font-weight:700}
+  body.profile-view .sidebar-item.mobile-profile.active{background:#252525;color:#ff7900}
+  body.profile-view .main-feed{gap:0;padding-bottom:0}
+  .profile-page{max-width:none}
+  .profile-page h1{margin-bottom:10px;font-size:.9rem}
+  .profile-card{display:grid;grid-template-columns:44px minmax(0,1fr);gap:5px 8px;min-height:0;padding:0;border:0;border-radius:0;background:transparent}
+  .profile-avatar{width:44px;height:44px;grid-row:1;grid-column:1}
+  .profile-name{grid-row:1;grid-column:2;align-self:center}
+  .profile-name h2{font-size:.76rem}
+  .profile-name p{font-size:.48rem}
+  .profile-stats{grid-row:2;grid-column:1/-1;justify-content:space-around;margin:2px 0}
+  .profile-stat{min-width:45px}
+  .profile-stat strong{font-size:.68rem}
+  .profile-stat span{font-size:.43rem}
+  .edit-profile{grid-row:3;grid-column:1/-1;display:flex;min-height:27px;align-items:center;justify-content:center;width:100%;padding:.35rem;font-size:.52rem}
+  .profile-follow-form{grid-row:3;grid-column:1/-1}
+  .profile-tabs{display:flex;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+  .profile-tabs::-webkit-scrollbar{display:none}
+  .profile-sessions{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:7px}
+  .profile-videos{grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+  .profile-video-title{font-size:.62rem}
+  .profile-video-heading h2{font-size:.68rem}
+  .profile-video-actions a{padding:.35rem .5rem;font-size:.5rem}
+  .profile-session{height:100px;padding:5px;font-size:.52rem;line-height:1.15}
+  .session-status{top:3px;left:3px;font-size:.4rem}
+  .profile-section-heading{margin:.75rem 0 .35rem;font-size:.68rem}
+  .profile-about,.profile-settings{margin-top:8px}
+}
+@media(max-width:480px){.profile-sessions{grid-template-columns:repeat(3,minmax(0,1fr))}.profile-stat{min-width:40px}.desktop-nav-label{display:none}.mobile-nav-label{display:inline}}
+{% endblock %}
+{% block content %}
+<main class="profile-page">
+  <h1>Profile</h1>
+  <section class="profile-card">
+    <div class="profile-avatar">
+      {% if profile.avatar %}<img src="{{ profile.avatar.url }}" alt="{{ profile.full_name|default:profile_user.get_username }}'s profile photo">{% endif %}
+    </div>
+    <div class="profile-name">
+      <h2>{{ profile.full_name|default:profile_user.first_name|default:profile_user.get_username }}</h2>
+      <p>@{{ profile.username }}{% if profile.bio %} · {{ profile.bio|truncatechars:70 }}{% endif %}</p>
+    </div>
+    <div class="profile-stats">
+      <div class="profile-stat"><strong>{{ followers_display }}</strong><span>Followers</span></div>
+      <div class="profile-stat"><strong>{{ following_display }}</strong><span>Following</span></div>
+      <div class="profile-stat"><strong>{{ sessions_display }}</strong><span>Sessions</span></div>
+      <div class="profile-stat"><strong>{{ video_count }}</strong><span>Videos</span></div>
+    </div>
+    {% if is_owner %}
+      <a class="edit-profile" href="?tab=settings">Edit profile</a>
+    {% else %}
+      <form class="profile-follow-form" method="post" action="{% url 'toggle_follow' profile_user.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'user_profile' profile.username %}">
+        <button class="edit-profile" type="submit">{% if is_following %}Following · Unfollow{% else %}Follow{% endif %}</button>
+      </form>
+    {% endif %}
+  </section>
+
+  <nav class="profile-tabs" aria-label="Profile sections">
+    <a href="?tab=sessions" class="{% if tab == 'sessions' %}active{% endif %}">Sessions</a>
+    <a href="?tab=videos" class="{% if tab == 'videos' %}active{% endif %}">Videos</a>
+    <a href="?tab=about" class="{% if tab == 'about' %}active{% endif %}">About</a>
+    {% if is_owner %}
+    <a href="?tab=settings" class="{% if tab == 'settings' %}active{% endif %}">Settings</a>
+    {% endif %}
+  </nav>
+
+  {% if tab == 'sessions' %}
+    <section class="profile-sessions" aria-label="Public sessions">
+      {% for session in sessions %}
+      <a class="profile-session" href="{% url 'session_detail' session.room_name %}"{% if session.thumbnail %} style="background-image:linear-gradient(0deg,rgba(0,0,0,.82),rgba(0,0,0,.03)),url('{{ session.thumbnail.url }}');background-size:cover;background-position:center"{% endif %}>
+        <span class="session-status {% if session.status == 'scheduled' %}scheduled{% endif %}">{% if session.status == 'live' %}LIVE{% else %}Free{% endif %}</span>
+        <span>{{ session.title }}</span>
+      </a>
+      {% empty %}<p class="empty-sessions">{% if is_owner %}Your sessions will appear here.{% else %}No public sessions yet.{% endif %}</p>{% endfor %}
+    </section>
+    <h2 class="profile-section-heading">Replay previews</h2>
+    <section class="profile-sessions" aria-label="Public replay previews">
+      {% for session in previews %}
+      <a class="profile-session" href="{% url 'session_detail' session.room_name %}">
+        {% if session.thumbnail %}<img src="{{ session.thumbnail.url }}" alt="" loading="lazy">{% endif %}
+        <span class="session-status replay">REPLAY</span>
+        <span>{{ session.title }}</span>
+      </a>
+      {% empty %}<p class="empty-sessions">{% if is_owner %}Your saved replays will appear here.{% else %}No public replay previews yet.{% endif %}</p>{% endfor %}
+    </section>
+  {% elif tab == 'videos' %}
+    <header class="profile-video-heading">
+      <h2>Videos</h2>
+      <div class="profile-video-actions">
+        {% if video_count > 12 %}
+        <a href="{% url 'video_library' %}?creator={{ profile.username|urlencode }}">View all {{ video_count }}</a>
+        {% endif %}
+        {% if is_owner %}<a class="profile-upload-link" href="{% url 'video_upload' %}">Upload video</a>{% endif %}
+      </div>
+    </header>
+    <section class="profile-videos" aria-label="Public videos">
+      {% for video in videos %}
+      <article class="profile-video">
+        <a class="profile-video-thumb" href="{% url 'video_detail' video.pk %}" aria-label="Watch {{ video.title }}">
+          <img src="{{ video.thumbnail_url }}" alt="" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}" decoding="async">
+          <span class="profile-video-views">{{ video.view_count }}</span>
+        </a>
+        <a class="profile-video-title" href="{% url 'video_detail' video.pk %}">{{ video.title }}</a>
+      </article>
+      {% empty %}<p class="empty-sessions">{% if is_owner %}Your uploaded videos will appear here.{% else %}No public videos yet.{% endif %}</p>{% endfor %}
+    </section>
+  {% elif tab == 'about' %}
+    <section class="profile-about">
+      <h2>About</h2>
+      <p>{% if profile.bio %}{{ profile.bio }}{% elif is_owner %}Add a short bio in Settings so people know what you do.{% else %}This user has not added a bio yet.{% endif %}</p>
+      {% if is_owner %}<p>Email · {{ profile_user.email }}</p>{% endif %}
+      <p>Member since {{ profile_user.date_joined|date:"F Y" }}</p>
+    </section>
+  {% elif is_owner %}
+    <section class="profile-settings">
+      <h2 style="font-size:.9rem;margin-bottom:.85rem">Edit profile</h2>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<div class="profile-error">{{ field.errors }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        {% if form.non_field_errors %}<div class="profile-error">{{ form.non_field_errors }}</div>{% endif %}
+        <button type="submit">Save profile</button>
+      </form>
+    </section>
+  {% endif %}
+</main>
+{% endblock %}

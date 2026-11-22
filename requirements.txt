@@ -1,0 +1,25 @@
+Django
+django-tailwind
+django-browser-reload
+requests
+Pillow
+python-dotenv
+gunicorn
+django-allauth[socialaccount,mfa]
+django-cloudinary-storage
+cloudinary
+dj-database-url
+psycopg[binary]
+reportlab
+cryptography
+whitenoise
+djangorestframework
+google-genai
+groq
+
+# Real-time communication
+channels
+channels-redis
+daphne
+livekit-api
+boto3

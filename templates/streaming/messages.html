@@ -1,0 +1,88 @@
+{% extends "base_app.html" %}
+{% block title %}Messages — RADEV LIVE{% endblock %}
+{% block body_class %}messages-view{% if selected_contact %} conversation-view{% endif %}{% endblock %}
+{% block extra_css %}
+.messages-layout{display:grid;grid-template-columns:260px minmax(0,1fr);height:calc(100vh - 145px);min-height:360px}.contacts{overflow:auto;border-right:1px solid #23243a;padding-right:.7rem}.contact{display:flex;gap:.65rem;align-items:center;border-radius:7px;padding:.6rem;color:#aaaab7;font-size:.72rem}.contact:hover,.contact.active{background:#17182b;color:white}.avatar-small{width:38px;height:38px;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg,#1e55bd,#08132b)}.contact small{display:block;color:#aaaab7;font-size:.58rem}.chat{min-width:0;display:flex;flex-direction:column;padding-left:1rem}.chat-head{padding:.35rem 0 .7rem;border-bottom:1px solid #23243a;font-size:.8rem}.thread{flex:1;overflow:auto;padding:.65rem 0}.bubble{background:#17182b;border-radius:8px;padding:.65rem;margin:.5rem 0;width:fit-content;max-width:75%;font-size:.68rem;overflow-wrap:anywhere}.bubble.mine{margin-left:auto;background:#e27918}.bubble small{display:block;opacity:.65;font-size:.53rem;margin-bottom:.2rem}.chat-form{display:flex;gap:.4rem}.chat-form input{flex:1;min-width:0;padding:.65rem .75rem;border:1px solid #23243a;border-radius:999px;background:#17182b;color:white}.chat-form button{border:0;border-radius:999px;background:#e27918;color:white;padding:.5rem .85rem;font-size:.68rem}.empty{color:#aaaab7;font-size:.75rem;padding:1rem 0}
+@media(max-width:760px){.messages-layout{display:flex;height:calc(100dvh - 130px);min-height:320px;flex-direction:column}.contacts{display:flex;flex-direction:column;gap:5px;overflow:auto;border:0;padding:0}.contact{min-height:43px;justify-content:flex-start;gap:8px;border:1px solid #252525;background:#151515;padding:5px 8px}.contact span{display:block;min-width:0;font-size:.57rem}.contact small{font-size:.48rem}.avatar-small{width:32px;height:32px}.chat{display:none;min-height:0;flex:1;padding:0}.conversation-view .contacts{display:none}.conversation-view .chat{display:flex}.chat-head{display:flex;align-items:center;gap:8px;padding:4px 0 8px;font-size:.7rem}.thread{padding:7px 0}.bubble{max-width:84%;padding:7px 9px;font-size:.58rem}.bubble small{font-size:.48rem}.chat-form{gap:5px}.chat-form input{padding:8px 10px;font-size:.58rem}.chat-form button{padding:6px 10px;font-size:.55rem}.messages-title{font-size:.9rem!important;margin-bottom:.6rem!important}.messages-back{display:none}.conversation-view .messages-back{display:inline-flex;margin:0 0 6px;color:#ff7900;font-size:.58rem}}
+{% endblock %}
+{% block content %}
+<h1 class="messages-title" style="font-size:1.15rem;margin-bottom:1rem">Messages</h1>
+<div class="messages-layout">
+  <nav class="contacts" aria-label="Contacts">
+    {% for contact in contacts %}
+    <a class="contact {% if selected_contact.pk == contact.pk %}active{% endif %}" href="{% url 'messages' %}?with={{ contact.pk }}">
+      <i class="avatar-small"></i><span>{{ contact.profile.full_name|default:contact.get_username }}<small>{{ contact.email }}</small></span>
+    </a>
+    {% empty %}<p class="empty">No other members yet.</p>{% endfor %}
+  </nav>
+  <section class="chat">
+    {% if selected_contact %}
+      <a class="messages-back" href="{% url 'messages' %}">← Back to messages</a>
+      <header class="chat-head">{{ selected_contact.profile.full_name|default:selected_contact.get_username }}</header>
+      <div class="thread" id="message-thread">
+        {% for item in thread %}
+        <div class="bubble {% if item.sender_id == request.user.id %}mine{% endif %}">
+          <small>{{ item.sender.profile.full_name|default:item.sender.get_username }}</small>{{ item.message }}
+        </div>
+        {% empty %}<p class="empty" id="thread-empty">Start a conversation.</p>{% endfor %}
+      </div>
+      <form class="chat-form" id="message-form" method="post">
+        {% csrf_token %}<input type="hidden" name="recipient" value="{{ selected_contact.pk }}">
+        <input id="message-input" name="message" maxlength="1000" placeholder="Type a message" autocomplete="off" required>
+        <button type="submit">Send</button>
+      </form>
+      <script>
+        (() => {
+          const currentUserId = {{ request.user.id }};
+          const otherUserId = {{ selected_contact.id }};
+          const thread = document.getElementById("message-thread");
+          const form = document.getElementById("message-form");
+          const input = document.getElementById("message-input");
+          const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+          const socket = new WebSocket(`${protocol}//${location.host}/ws/messages/${otherUserId}/`);
+
+          function addMessage(item) {
+            const empty = document.getElementById("thread-empty");
+            if (empty) empty.remove();
+            const bubble = document.createElement("div");
+            bubble.className = `bubble${item.sender_id === currentUserId ? " mine" : ""}`;
+            const sender = document.createElement("small");
+            sender.textContent = item.username;
+            const body = document.createTextNode(item.message);
+            bubble.append(sender, body);
+            thread.appendChild(bubble);
+            thread.scrollTop = thread.scrollHeight;
+          }
+
+          socket.addEventListener("message", event => {
+            const data = JSON.parse(event.data);
+            if (data.type === "history") {
+              thread.replaceChildren();
+              if (!data.messages.length) {
+                const empty = document.createElement("p");
+                empty.className = "empty";
+                empty.id = "thread-empty";
+                empty.textContent = "Start a conversation.";
+                thread.appendChild(empty);
+              } else data.messages.forEach(addMessage);
+            } else if (data.type === "message") addMessage(data);
+          });
+
+          form.addEventListener("submit", event => {
+            event.preventDefault();
+            const message = input.value.trim();
+            if (!message) return;
+            if (socket.readyState === WebSocket.OPEN) {
+              socket.send(JSON.stringify({message}));
+              input.value = "";
+            } else {
+              form.submit();
+            }
+          });
+          window.addEventListener("beforeunload", () => socket.close());
+        })();
+      </script>
+    {% else %}<p class="empty">Create another account to start messaging.</p>{% endif %}
+  </section>
+</div>
+{% endblock %}

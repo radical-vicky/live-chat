@@ -1,0 +1,20 @@
+{% extends "base_app.html" %}
+{% block title %}Recording notice — RADEV LIVE{% endblock %}
+{% block body_class %}recording-consent-view{% endblock %}
+{% block extra_css %}
+.consent-card{max-width:620px;margin:2rem auto;padding:1.5rem;border:1px solid #303030;border-radius:12px;background:#151515}.consent-card h1{font-size:1.2rem;margin-bottom:.75rem}.consent-card p{color:#bbb;font-size:.82rem;line-height:1.6;margin:.5rem 0}.consent-check{display:flex;align-items:flex-start;gap:.65rem;margin:1.2rem 0;font-size:.78rem}.consent-check input{margin-top:.2rem}.consent-error{color:#ff7373;font-size:.72rem}.consent-actions{display:flex;gap:.6rem;align-items:center}.consent-actions button,.consent-actions a{border:0;border-radius:999px;padding:.65rem 1rem;font-size:.75rem}.consent-actions button{background:#ff7900;color:#111;font-weight:700}.consent-actions a{background:#272727;color:#eee}@media(max-width:760px){.consent-card{margin:.5rem auto;padding:1rem}.consent-card h1{font-size:.92rem}.consent-card p{font-size:.62rem}.consent-check{font-size:.6rem}.consent-actions button,.consent-actions a{padding:8px 11px;font-size:.58rem}}
+{% endblock %}
+{% block content %}
+<section class="consent-card">
+  <h1>Recording notice</h1>
+  <p><strong>{{ session.title }}</strong> will be recorded, including the room's video, audio, and screen sharing. When the live session ends, the full replay will be saved as a preview.</p>
+  <p>{% if session.visibility == "public" %}This replay will be visible to other RADEV LIVE users, who may watch, like, comment, save it, and follow its host.{% else %}This replay will follow the session's private visibility and will not be listed publicly.{% endif %}</p>
+  <p>{% if is_host %}You must agree before entering the live room.{% else %}You must agree before joining this recorded live room.{% endif %} You can leave at any time.</p>
+  {% if consent_error %}<p class="consent-error" role="alert">{{ consent_error }}</p>{% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <label class="consent-check"><input type="checkbox" name="recording_consent" required> I understand and agree to the recording and replay visibility described above.</label>
+    <div class="consent-actions"><button type="submit">{% if is_host %}Agree and continue{% else %}Agree and join{% endif %}</button><a href="{% url 'session_detail' session.room_name %}">Not now</a></div>
+  </form>
+</section>
+{% endblock %}

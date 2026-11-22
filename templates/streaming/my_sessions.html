@@ -1,0 +1,13 @@
+{% extends "base_app.html" %}
+{% block title %}My sessions — RADEV LIVE{% endblock %}
+{% block body_class %}my-sessions-view{% endblock %}
+{% block extra_css %}
+.page-title{font-size:1.15rem;margin-bottom:1.25rem}.tabs{display:flex;gap:.5rem;margin-bottom:1rem}.tabs a{font-size:.68rem;padding:.38rem .72rem;border-radius:999px;background:#17182b}.tabs a.active{background:#e27918}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}.card{height:150px;border-radius:8px;padding:.55rem;display:flex;align-items:flex-end;position:relative;overflow:hidden;background:linear-gradient(135deg,#1749a1,#090915);font-size:.68rem;font-weight:700;text-shadow:0 1px 3px #000}.card:nth-child(3n){background-color:#8f1d2e}.card-thumbnail{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.card::after{position:absolute;inset:0;border-radius:inherit;background:linear-gradient(0deg,rgba(0,0,0,.82),rgba(0,0,0,.08));content:""}.tag{position:absolute;z-index:1;top:.5rem;left:.5rem;background:#f24a45;padding:.1rem .3rem;border-radius:3px;font-size:.48rem;text-shadow:none}.card-title{position:relative;z-index:1;overflow-wrap:anywhere}@media(max-width:760px){.page-title{font-size:.9rem;margin-bottom:.6rem}.tabs{gap:5px;margin-bottom:8px;overflow-x:auto}.tabs a{flex:0 0 auto;padding:5px 9px;font-size:.55rem}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.card{height:132px;border-radius:7px;padding:7px;font-size:.58rem}.tag{top:5px;left:5px;padding:3px 5px;font-size:.43rem}}
+{% endblock %}
+{% block content %}
+<h1 class="page-title">My sessions</h1>
+<div class="tabs"><a class="{% if not status %}active{% endif %}" href="{% url 'my_sessions' %}">All</a><a class="{% if status == 'live' %}active{% endif %}" href="?status=live">Live</a><a class="{% if status == 'scheduled' %}active{% endif %}" href="?status=scheduled">Scheduled</a><a class="{% if status == 'ended' %}active{% endif %}" href="?status=ended">Ended</a></div>
+<div class="grid">
+{% for session in sessions %}<a class="card" href="{% url 'session_detail' session.room_name %}" aria-label="Open {{ session.title }}">{% if session.thumbnail %}<img class="card-thumbnail" src="{{ session.thumbnail.url }}" alt="" loading="lazy">{% endif %}<span class="tag">{% if session.preview_status == "ready" %}REPLAY{% else %}{{ session.get_status_display|upper }}{% endif %}</span><span class="card-title">{{ session.title }}</span></a>{% empty %}<p class="text-muted">No sessions in this view.</p>{% endfor %}
+</div>
+{% endblock %}

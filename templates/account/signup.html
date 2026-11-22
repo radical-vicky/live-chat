@@ -1,0 +1,46 @@
+{% extends "account/base_auth.html" %}
+
+{% block title %}Register — RADEV LIVE{% endblock %}
+
+{% block auth_content %}
+    <form method="POST" action="{% url 'account_signup' %}">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="errorlist" style="margin-bottom: 1rem;">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="id_full_name">Full Name</label>
+            <input type="text" name="full_name" placeholder="Your Name" class="form-input" id="id_full_name" required>
+            {{ form.full_name.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_email">Email</label>
+            <input type="email" name="email" placeholder="you@example.com" class="form-input" id="id_email" required>
+            {{ form.email.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_password1">Password</label>
+            <input type="password" name="password1" placeholder="Password" class="form-input" id="id_password1" required>
+            {{ form.password1.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_password2">Confirm Password</label>
+            <input type="password" name="password2" placeholder="Confirm Password" class="form-input" id="id_password2" required>
+            {{ form.password2.errors }}
+        </div>
+
+        {% if redirect_field_value %}
+            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+
+        <button type="submit" class="btn-submit">Register</button>
+        <a href="{% url 'account_login' %}" class="auth-mobile-switch">Log in</a>
+    </form>
+{% endblock %}

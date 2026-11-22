@@ -1,0 +1,21 @@
+{% extends "base_app.html" %}
+{% block title %}Favorites — RADEV LIVE{% endblock %}
+{% block body_class %}favorites-view{% endblock %}
+{% block extra_css %}
+.page-title{font-size:1.15rem;margin-bottom:1.25rem}.section{font-size:.72rem;margin:.8rem 0}.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:.7rem}.card{height:145px;border-radius:7px;padding:.5rem;display:flex;align-items:flex-end;position:relative;background:linear-gradient(135deg,#1749a1,#090915);font-size:.65rem;font-weight:700}.card:nth-child(3n){background:linear-gradient(135deg,#8f1d2e,#090915)}.card:nth-child(4n){background:linear-gradient(135deg,#9c4a1b,#090915)}.tag{position:absolute;top:.45rem;left:.45rem;background:#f24a45;padding:.1rem .3rem;border-radius:3px;font-size:.48rem}.favorite-form{position:absolute;right:.4rem;top:.35rem}.favorite-form button{border:0;border-radius:99px;background:#111827;color:white;padding:.25rem .4rem;cursor:pointer}.people{display:flex;gap:.6rem;flex-wrap:wrap}.person{text-align:center;font-size:.58rem}.person i{display:block;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#1749a1,#090915);margin-bottom:.35rem}.person form button{border:0;background:none;color:#aaaab7;font-size:.55rem;cursor:pointer}@media(max-width:1100px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:760px){.page-title{font-size:.9rem;margin-bottom:.6rem}.section{margin:.65rem 0 .45rem;font-size:.62rem}.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.card{height:100px;border-radius:6px;padding:5px;font-size:.53rem}.tag{top:4px;left:4px;padding:2px 4px;font-size:.4rem}.favorite-form{top:3px;right:3px}.favorite-form button{padding:2px 5px;font-size:.55rem}.people{gap:10px}.person{font-size:.5rem}.person i{width:38px;height:38px;margin-bottom:3px}.person form button{font-size:.48rem}}
+{% endblock %}
+{% block content %}
+<h1 class="page-title">Favorites</h1>
+<h2 class="section">Saved sessions</h2>
+<div class="grid">
+{% for favorite in favorites %}{% with session=favorite.session %}
+<article class="card"><span class="tag">{% if session.status == "live" %}LIVE{% else %}{{ session.get_status_display }}{% endif %}</span><a href="{% url 'session_detail' session.room_name %}">{{ session.title }}</a><form class="favorite-form" method="post" action="{% url 'toggle_favorite' session.room_name %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'favorites' %}"><button type="submit" aria-label="Remove {{ session.title }} from favorites">×</button></form></article>
+{% endwith %}{% empty %}<p class="text-muted">You haven't saved any sessions. Explore sessions and use Save to add them here.</p>{% endfor %}
+</div>
+<h2 class="section">Followed creators</h2>
+<div class="people">
+{% for follow in following %}<div class="person"><a href="{% url 'creator_profile' follow.following.profile.username %}"><i></i>{{ follow.following.profile.full_name|default:follow.following.get_username }}</a><form method="post" action="{% url 'toggle_follow' follow.following_id %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'favorites' %}"><button type="submit">Unfollow</button></form></div>
+{% empty %}<p class="text-muted">You aren't following any creators yet.</p>{% endfor %}
+</div>
+{% endblock %}

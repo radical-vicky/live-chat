@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ session.title }} | RADEV LIVE</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            font-family: Inter, Arial, sans-serif;
+            background: #080808;
+            color: #f4f4f4;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; background: #080808; }
+        button, input { font: inherit; }
+        button { cursor: pointer; }
+        .room-shell { display: grid; min-height: 100vh; grid-template-rows: 52px minmax(0, 1fr); }
+        .room-topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0 1.4rem; border-bottom: 1px solid #202020; background: #0a0a0a; }
+        .session-meta { display: flex; align-items: center; gap: .65rem; min-width: 0; font-size: .82rem; font-weight: 700; }
+        .session-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .live-badge { border-radius: 3px; background: #f22b2b; padding: .12rem .34rem; font-size: .52rem; }
+        .watching-count,.connection-status { color: #a7a7a7; font-size: .68rem; font-weight: 400; white-space: nowrap; }
+        .recording-indicator { color: #ff6868; font-size: .62rem; font-weight: 700; white-space: nowrap; }
+        .room-layout { display: grid; min-height: 0; grid-template-columns: minmax(0, 1fr) minmax(300px, 27vw); gap: 12px; padding: 12px; }
+        .video-area { display: flex; min-width: 0; min-height: 0; flex-direction: column; }
+        .room-heading { display: none; align-items: center; justify-content: space-between; min-height: 34px; margin-bottom: 8px; }
+        .room-heading h1 { margin: 0; font-size: 1rem; }
+        .back-to-room { border: 0; background: transparent; color: #aaa; font-size: .75rem; }
+        .back-to-room:hover { color: #fff; }
+        .video-grid { display: grid; flex: 1; min-height: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: minmax(150px, 1fr); gap: 8px; }
+        .video-tile { position: relative; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid #242424; border-radius: 8px; background: linear-gradient(140deg, #1956c1, #0b1429); }
+        .video-tile:nth-child(3n+2) { background: linear-gradient(140deg, #087d77, #0b2725); }
+        .video-tile:nth-child(3n) { background: linear-gradient(140deg, #4a2bb5, #17132d); }
+        .video-tile:nth-child(4n) { background: linear-gradient(140deg, #bd2727, #310e0e); }
+        .video-tile:nth-child(5n) { background: linear-gradient(140deg, #172f70, #0b1120); }
+        .video-tile video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        .tile-label { position: absolute; z-index: 1; bottom: 8px; left: 8px; max-width: calc(100% - 16px); overflow: hidden; border-radius: 3px; background: rgba(0,0,0,.72); padding: 4px 7px; color: #fff; font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
+        .tile-profile-link { position: absolute; z-index: 2; bottom: 8px; left: 8px; display: flex; max-width: calc(100% - 16px); align-items: center; gap: 7px; overflow: hidden; border: 1px solid rgba(255,255,255,.14); border-radius: 999px; background: rgba(0,0,0,.76); padding: 3px 10px 3px 3px; color: #fff; text-decoration: none; }
+        .tile-profile-link:hover,.tile-profile-link:focus-visible { border-color: #ff7900; background: rgba(0,0,0,.92); outline: none; }
+        .tile-avatar,.participant-avatar { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; overflow: hidden; border-radius: 50%; background: linear-gradient(135deg,#d56b13,#652f06); color: #fff; font-size: .72rem; font-weight: 700; }
+        .tile-avatar img,.participant-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .tile-profile-link .tile-label { position: static; max-width: 100%; border-radius: 0; background: transparent; padding: 0; font-size: .7rem; }
+        .controls-bar { display: flex; min-height: 52px; align-items: center; justify-content: center; gap: 7px; padding-top: 8px; }
+        .control-button { border: 0; border-radius: 999px; background: #202020; padding: 9px 16px; color: #eee; font-size: .75rem; }
+        .control-button:hover { background: #333; }
+        .control-button.share { background: #ff7900; color: #111; }
+        .control-button.leave,.control-button.end { background: #ec2929; color: #fff; }
+        .control-button.end { background: #ac1c1c; }
+        .room-sidebar { display: flex; min-height: 0; flex-direction: column; border-left: 1px solid #222; background: #0b0b0b; }
+        .chat-panel,.host-control-panel { display: flex; min-height: 0; flex: 1; flex-direction: column; }
+        .panel-heading { min-height: 44px; padding: 10px 14px; border-bottom: 1px solid #222; font-size: .95rem; font-weight: 700; }
+        .chat-messages { display: flex; flex: 1; flex-direction: column; gap: 7px; overflow-y: auto; padding: 10px 9px; }
+        .chat-message { border: 1px solid #242424; border-radius: 9px; background: #151515; padding: 8px 10px; }
+        .chat-user-link { display: flex; width: fit-content; max-width: 100%; align-items: center; gap: 7px; margin-bottom: 4px; color: #f5a444; text-decoration: none; }
+        .chat-user-link:hover,.chat-user-link:focus-visible { color: #ff9a3c; outline: none; }
+        .chat-avatar { display: grid; width: 25px; height: 25px; flex: 0 0 25px; place-items: center; overflow: hidden; border-radius: 50%; background: linear-gradient(135deg,#d56b13,#652f06); color: #fff; font-size: .65rem; font-weight: 700; }
+        .chat-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .chat-username { min-width: 0; overflow: hidden; margin: 0; font-size: .75rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+        .chat-message-text { margin: 0; color: #ddd; font-size: .78rem; overflow-wrap: anywhere; }
+        .chat-form { display: flex; gap: 6px; padding: 8px; border-top: 1px solid #222; }
+        .chat-input { min-width: 0; flex: 1; border: 1px solid #252525; border-radius: 8px; outline: none; background: #090909; padding: 8px 10px; color: #fff; font-size: .75rem; }
+        .chat-input:focus { border-color: #555; }
+        .chat-send { border: 0; border-radius: 999px; background: #ff7900; padding: 0 14px; color: #111; font-size: .72rem; font-weight: 700; }
+        .host-control-panel { display: none; padding: 14px; }
+        body.host-mode .room-shell { display: block; min-height: 100vh; }
+        body.host-mode .room-topbar { display: none; }
+        body.host-mode .room-layout { min-height: 100vh; grid-template-columns: minmax(0, 1fr) clamp(360px, 30vw, 440px); gap: 0; padding: 0; }
+        body.host-mode .video-area { padding: 16px 12px 12px 18px; }
+        body.host-mode .room-heading { display: flex; }
+        body.host-mode .video-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); grid-template-rows: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; }
+        body.host-mode #local-tile { grid-row: 1 / span 2; }
+        body.host-mode .video-grid .video-tile:nth-child(n+4) { display: none; }
+        body.host-mode .controls-bar { display: none; }
+        body.host-mode .room-sidebar { border-left: 1px solid #202020; }
+        body.host-mode .chat-panel { display: none; }
+        body.host-mode .host-control-panel { display: flex; }
+        .participant-heading { padding: 2px 0 10px; font-size: .95rem; font-weight: 700; }
+        .participant-list { display: flex; min-height: 0; flex-direction: column; gap: 7px; overflow-y: auto; }
+        .participant-row { display: flex; min-height: 42px; align-items: center; justify-content: space-between; gap: 7px; border: 1px solid #242424; border-radius: 8px; background: #151515; padding: 5px 7px 5px 7px; font-size: .78rem; }
+        .participant-profile-link { display: flex; min-width: 0; flex: 1; align-items: center; gap: 8px; overflow: hidden; color: #eee; text-decoration: none; }
+        .participant-profile-link:hover,.participant-profile-link:focus-visible { color: #ff9a3c; outline: none; }
+        .participant-avatar { width: 28px; height: 28px; flex-basis: 28px; font-size: .65rem; }
+        .participant-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .participant-actions { display: flex; flex-shrink: 0; gap: 4px; }
+        .participant-action { border: 0; border-radius: 999px; background: #272727; padding: 7px 10px; color: white; font-size: .68rem; }
+        .participant-action.remove { background: #ec2929; }
+        .room-settings { display: flex; flex-direction: column; gap: 7px; margin-top: 14px; }
+        .room-settings h2 { margin: 0 0 3px; font-size: .88rem; }
+        .setting-button { width: 100%; min-height: 38px; border: 1px solid #292929; border-radius: 999px; background: #202020; color: #eee; font-size: .72rem; }
+        .setting-button:hover { background: #303030; }
+        .setting-button.end { border-color: #ec2929; background: #ec2929; color: #fff; }
+        .participant-error { min-height: 14px; margin: 5px 0 0; color: #ff6868; font-size: .57rem; }
+        @media(max-width:850px) {
+            .room-layout, body.host-mode .room-layout { display: flex; min-height: calc(100vh - 52px); flex-direction: column; padding: 10px; }
+            .video-area, body.host-mode .video-area { min-height: min(62vh, 500px); }
+            .video-grid, body.host-mode .video-grid { flex: 0 0 auto; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto; grid-auto-rows: minmax(170px, auto); align-content: start; }
+            .video-tile, body.host-mode .video-tile { height: clamp(170px, 32vh, 280px); min-height: 0; }
+            #local-tile, body.host-mode #local-tile { grid-column: 1 / -1; grid-row: auto; height: clamp(220px, 42vh, 360px); min-height: 0; }
+            .room-sidebar, body.host-mode .room-sidebar { min-height: 340px; border: 1px solid #222; border-radius: 12px; overflow: hidden; }
+            .chat-panel, body.host-mode .host-control-panel { min-height: 340px; }
+            body.host-mode .room-layout { min-height: 100vh; }
+        }
+        @media(max-width:620px) {
+            .room-shell { grid-template-rows: 48px minmax(0, 1fr); }
+            .room-topbar { min-width: 0; gap: 8px; padding: 0 10px; }
+            .session-meta { gap: 6px; font-size: .75rem; }
+            .session-title { max-width: 38vw; }
+            .watching-count, .connection-status { font-size: .65rem; }
+            .room-layout, body.host-mode .room-layout { min-height: calc(100dvh - 48px); padding: 8px; }
+            body.host-mode .room-layout { min-height: 100dvh; }
+            .video-area, body.host-mode .video-area { min-height: 0; padding: 0; }
+            .video-grid, body.host-mode .video-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(150px, auto); gap: 8px; }
+            .video-tile, body.host-mode .video-tile { height: clamp(150px, 30vh, 230px); min-height: 0; border-radius: 12px; }
+            #local-tile, body.host-mode #local-tile { grid-column: 1 / -1; grid-row: auto; height: clamp(210px, 40vh, 320px); min-height: 0; }
+            .controls-bar { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; padding: 8px 0; scrollbar-width: none; }
+            .controls-bar::-webkit-scrollbar { display: none; }
+            .control-button { min-height: 42px; flex: 0 0 auto; padding: 9px 13px; font-size: .74rem; }
+            .room-sidebar, body.host-mode .room-sidebar { min-height: 340px; border: 1px solid #222; border-radius: 12px; }
+            .chat-panel, body.host-mode .host-control-panel { min-height: 340px; }
+            .panel-heading { min-height: 44px; padding: 11px 12px; font-size: .92rem; }
+            .chat-input { min-height: 44px; padding: 9px 10px; font-size: 16px; }
+            .chat-send { min-height: 42px; padding: 0 14px; font-size: .75rem; }
+            .participant-action { min-height: 38px; font-size: .7rem; }
+            .setting-button { min-height: 42px; font-size: .75rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="room-shell">
+    <header class="room-topbar">
+        <div class="session-meta">
+            <span class="session-title">{{ session.title }}</span>
+            <span class="live-badge">LIVE</span>
+            <span id="recording-indicator" class="recording-indicator">{% if session.preview_status == "recording" %}RECORDING{% elif is_host %}STARTING RECORDING{% endif %}</span>
+            <span id="participant-count" class="watching-count">1 watching</span>
+        </div>
+        <span id="connection-status" class="connection-status">Connecting...</span>
+    </header>
+
+    <main class="room-layout">
+        <section class="video-area">
+            <div class="room-heading">
+                <h1>Host controls</h1>
+                <button id="back-to-room" class="back-to-room" type="button">Back to room</button>
+            </div>
+            <div id="video-grid" class="video-grid">
+                <div id="local-tile" class="video-tile">
+                    <span class="tile-label">{% if is_host %}Host · You{% else %}You{% endif %}</span>
+                </div>
+            </div>
+
+            <div id="room-controls" class="controls-bar">
+                <button id="mic-button" class="control-button" type="button" disabled>Mic</button>
+                <button id="camera-button" class="control-button" type="button" disabled>Camera</button>
+                <button id="screen-button" class="control-button share" type="button" disabled>Share screen</button>
+                <button id="participants-button" class="control-button" type="button">Participants</button>
+                <button id="chat-button" class="control-button" type="button">Chat</button>
+                <button id="leave-button" class="control-button leave" type="button">Leave</button>
+            </div>
+
+            <form id="leave-form" method="POST" action="{% url 'leave_session' session.room_name %}" hidden>
+                {% csrf_token %}
+            </form>
+            {% if is_host %}
+            <form id="end-session-form" method="POST" action="{% url 'end_session' session.room_name %}" hidden>
+                {% csrf_token %}
+            </form>
+            {% endif %}
+        </section>
+
+        <aside class="room-sidebar">
+            <section id="chat-panel" class="chat-panel">
+                <div class="panel-heading">Chat</div>
+                <div id="chat-messages" class="chat-messages">
+                    <p class="chat-message-text">Loading chat...</p>
+                </div>
+                <form id="chat-form" class="chat-form">
+                    <input id="chat-input" class="chat-input" maxlength="1000" placeholder="Type a message" autocomplete="off">
+                    <button class="chat-send" type="submit">Send</button>
+                </form>
+            </section>
+
+            <section id="host-control-panel" class="host-control-panel" aria-label="Host controls">
+                <div class="participant-heading">Participants (<span id="participants-count-control">0</span>)</div>
+                <div id="participant-list" class="participant-list"></div>
+                <p id="participant-error" class="participant-error" role="status"></p>
+                {% if is_host %}
+                <div class="room-settings">
+                    <h2>Room settings</h2>
+                    <button id="mute-all-button" class="setting-button" type="button">Mute all</button>
+                    <button id="toggle-chat-button" class="setting-button" type="button">Disable chat</button>
+                    <button id="toggle-lock-button" class="setting-button" type="button">Lock room</button>
+                    <button class="setting-button end" type="submit" form="end-session-form">End session for all</button>
+                </div>
+                {% endif %}
+            </section>
+        </aside>
+    </main>
+</div>
+
+<script type="module">
+import { Room, RoomEvent, Track } from
+    "https://cdn.jsdelivr.net/npm/livekit-client@2.23.0/+esm";
+
+const roomName = "{{ session.room_name }}";
+const videoGrid = document.getElementById("video-grid");
+const localTile = document.getElementById("local-tile");
+const statusElement = document.getElementById("connection-status");
+const participantTiles = new Map();
+const participantsByIdentity = new Map();
+const participantList = document.getElementById("participant-list");
+const participantCount = document.getElementById("participant-count");
+const participantsCountControl = document.getElementById("participants-count-control");
+const participantError = document.getElementById("participant-error");
+const isHost = {{ is_host|yesno:"true,false" }};
+const removeParticipantUrl = "{% url 'remove_participant' session.room_name 0 %}";
+const muteParticipantUrl = "{% url 'toggle_participant_mute' session.room_name 0 %}";
+const roomStatusUrl = "{% url 'room_status' session.room_name %}";
+const roomControlsUrl = "{% url 'room_controls' session.room_name %}";
+const startPreviewRecordingUrl = "{% url 'start_preview_recording' session.room_name %}";
+const updateMicrophoneUrl = "{% url 'update_microphone_status' session.room_name %}";
+const csrfToken = document.querySelector("#leave-form [name=csrfmiddlewaretoken]").value;
+
+let room = null;
+let chatSocket = null;
+let micEnabled = true;
+let cameraEnabled = true;
+let screenEnabled = false;
+
+function createTile(identity, name) {
+    const tile = document.createElement("div");
+    tile.className = "video-tile";
+    tile.dataset.identity = identity;
+    const label = document.createElement("span");
+    label.className = "tile-label";
+    label.textContent = name || "Participant";
+    tile.appendChild(label);
+    videoGrid.appendChild(tile);
+    participantTiles.set(identity, tile);
+    const participant = participantsByIdentity.get(identity);
+    if (participant) renderTileProfile(tile, participant);
+    return tile;
+}
+
+function createProfileLink(participant, name, linkClass, avatarClass, nameClass) {
+    const link = document.createElement(participant.profile_url ? "a" : "div");
+    link.className = linkClass;
+    if (participant.profile_url) link.href = participant.profile_url;
+    link.setAttribute("aria-label", `View ${name}'s profile`);
+    const avatar = document.createElement("span");
+    avatar.className = avatarClass;
+    if (participant.avatar_url) {
+        const image = document.createElement("img");
+        image.src = participant.avatar_url;
+        image.alt = "";
+        avatar.appendChild(image);
+    } else {
+        avatar.textContent = (name || "U").trim().charAt(0).toUpperCase();
+    }
+    const label = document.createElement("span");
+    label.className = nameClass;
+    label.textContent = name || "Participant";
+    link.append(avatar, label);
+    return link;
+}
+
+function renderTileProfile(tile, participant) {
+    const name = participant.name || "Participant";
+    const profileLink = createProfileLink(
+        participant,
+        name,
+        "tile-profile-link",
+        "tile-avatar",
+        "tile-label",
+    );
+    const currentBadge = tile.querySelector(".tile-profile-link, .tile-label");
+    if (currentBadge) currentBadge.replaceWith(profileLink);
+    else tile.appendChild(profileLink);
+}
+
+function attachTrack(track, tile) {
+    const element = track.attach();
+    if (track.kind === Track.Kind.Video) {
+        element.className = "";
+        tile.prepend(element);
+    } else {
+        element.autoplay = true;
+        element.hidden = true;
+        tile.appendChild(element);
+    }
+}
+
+function removeParticipant(identity) {
+    const tile = participantTiles.get(identity);
+    if (tile) {
+        tile.querySelectorAll("video, audio").forEach(element => element.remove());
+        tile.remove();
+        participantTiles.delete(identity);
+    }
+    participantsByIdentity.delete(identity);
+}
+
+function renderChatMessage(item) {
+    const container = document.getElementById("chat-messages");
+    const wrapper = document.createElement("div");
+    wrapper.className = "chat-message";
+    const username = createProfileLink(
+        item,
+        item.username,
+        "chat-user-link",
+        "chat-avatar",
+        "chat-username",
+    );
+    const message = document.createElement("p");
+    message.className = "chat-message-text";
+    message.textContent = item.message;
+    wrapper.append(username, message);
+    container.appendChild(wrapper);
+    container.scrollTop = container.scrollHeight;
+}
+
+function updateChatAvailability(enabled) {
+    const input = document.getElementById("chat-input");
+    const sendButton = document.querySelector("#chat-form button");
+    input.disabled = !enabled;
+    sendButton.disabled = !enabled;
+    input.placeholder = enabled ? "Type a message" : "Chat disabled by the host";
+}
+
+async function postAction(url, values = {}) {
+    const response = await fetch(url, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+            "X-CSRFToken": csrfToken,
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams(values),
+    });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error || "The room action failed.");
+    return body;
+}
+
+function setRoomMode(hostControls) {
+    document.body.classList.toggle("host-mode", hostControls);
+    document.querySelector(".room-heading h1").textContent =
+        isHost ? "Host controls" : "Participants";
+}
+
+async function runRoomControl(action) {
+    try {
+        const result = await postAction(roomControlsUrl, {action});
+        participantError.textContent = "";
+        if (typeof result.is_locked === "boolean") {
+            document.getElementById("toggle-lock-button").textContent =
+                result.is_locked ? "Unlock room" : "Lock room";
+        }
+        if (typeof result.chat_enabled === "boolean") {
+            document.getElementById("toggle-chat-button").textContent =
+                result.chat_enabled ? "Disable chat" : "Enable chat";
+            updateChatAvailability(result.chat_enabled);
+        }
+        if (typeof result.muted_count === "number") refreshParticipants();
+    } catch (error) {
+        participantError.textContent = error.message;
+    }
+}
+
+async function refreshParticipants() {
+    try {
+        const response = await fetch(roomStatusUrl, {credentials: "same-origin"});
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not load participants.");
+        participantCount.textContent = `${data.count} watching`;
+        participantsCountControl.textContent = data.count;
+        if (isHost) {
+            document.getElementById("toggle-lock-button").textContent =
+                data.is_locked ? "Unlock room" : "Lock room";
+            document.getElementById("toggle-chat-button").textContent =
+                data.chat_enabled ? "Disable chat" : "Enable chat";
+        }
+        updateChatAvailability(data.chat_enabled);
+        participantList.replaceChildren();
+        const activeIdentities = new Set();
+        data.participants.forEach(participant => {
+            if (participant.livekit_identity) {
+                const identity = participant.livekit_identity;
+                activeIdentities.add(identity);
+                const previousProfile = participantsByIdentity.get(identity);
+                participantsByIdentity.set(identity, participant);
+                let tile = null;
+                if (participant.is_self) {
+                    tile = localTile;
+                } else {
+                    tile = participantTiles.get(identity);
+                    if (!tile) tile = createTile(identity, participant.name);
+                }
+                if (
+                    tile &&
+                    (
+                        !previousProfile ||
+                        previousProfile.name !== participant.name ||
+                        previousProfile.profile_url !== participant.profile_url ||
+                        previousProfile.avatar_url !== participant.avatar_url
+                    )
+                ) {
+                    renderTileProfile(tile, participant);
+                }
+            }
+            const row = document.createElement("div");
+            row.className = "participant-row";
+            row.appendChild(createProfileLink(
+                participant,
+                participant.name,
+                "participant-profile-link",
+                "participant-avatar",
+                "participant-name",
+            ));
+            if (isHost && !participant.is_host) {
+                const actions = document.createElement("div");
+                actions.className = "participant-actions";
+                const muteButton = document.createElement("button");
+                muteButton.className = "participant-action";
+                muteButton.type = "button";
+                muteButton.textContent = participant.is_muted ? "Unmute" : "Mute";
+                muteButton.addEventListener("click", async () => {
+                    muteButton.disabled = true;
+                    try {
+                        const url = muteParticipantUrl.replace(/\/0\/$/, `/${participant.id}/`);
+                        await postAction(url);
+                        participantError.textContent = "";
+                        refreshParticipants();
+                    } catch (error) {
+                        participantError.textContent = error.message;
+                        muteButton.disabled = false;
+                    }
+                });
+                const removeButton = document.createElement("button");
+                removeButton.className = "participant-action remove";
+                removeButton.type = "button";
+                removeButton.textContent = "Remove";
+                removeButton.addEventListener("click", async () => {
+                    if (!window.confirm(`Remove ${participant.name} from this room?`)) return;
+                    removeButton.disabled = true;
+                    try {
+                        const url = removeParticipantUrl.replace(/\/0\/$/, `/${participant.id}/`);
+                        const response = await fetch(url, {
+                            method: "POST",
+                            credentials: "same-origin",
+                            headers: {"X-CSRFToken": csrfToken},
+                        });
+                        const result = await response.json();
+                        if (!response.ok) throw new Error(result.error || "Could not remove participant.");
+                        participantError.textContent = "";
+                        refreshParticipants();
+                    } catch (error) {
+                        participantError.textContent = error.message;
+                        removeButton.disabled = false;
+                    }
+                });
+                actions.append(muteButton, removeButton);
+                row.appendChild(actions);
+            }
+            participantList.appendChild(row);
+        });
+        for (const identity of participantTiles.keys()) {
+            if (!activeIdentities.has(identity)) removeParticipant(identity);
+        }
+        if (!data.participants.length) {
+            const empty = document.createElement("p");
+            empty.className = "chat-message-text";
+            empty.textContent = "No active participants.";
+            participantList.appendChild(empty);
+        }
+        participantError.textContent = "";
+    } catch (error) {
+        participantError.textContent = error.message;
+    }
+}
+
+function connectChat() {
+    const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+    chatSocket = new WebSocket(`${protocol}//${location.host}/ws/chat/${roomName}/`);
+    chatSocket.onmessage = event => {
+        const data = JSON.parse(event.data);
+        if (data.type === "session_ended") {
+            statusElement.textContent = "Session ended by the host";
+            if (room) room.disconnect();
+            chatSocket.close();
+            window.setTimeout(() => {
+                window.location.href = "{% url 'session_detail' session.room_name %}";
+            }, 1200);
+            return;
+        }
+        if (data.type === "history") {
+            document.getElementById("chat-messages").replaceChildren();
+            data.messages.forEach(renderChatMessage);
+        }
+        if (data.type === "message") renderChatMessage(data);
+        if (data.type === "chat_settings") updateChatAvailability(data.enabled);
+        if (data.type === "error") participantError.textContent = data.message;
+    };
+}
+
+document.getElementById("chat-form").addEventListener("submit", event => {
+    event.preventDefault();
+    const input = document.getElementById("chat-input");
+    const message = input.value.trim();
+    if (!message || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+    chatSocket.send(JSON.stringify({message}));
+    input.value = "";
+});
+
+document.getElementById("participants-button").addEventListener("click", () => {
+    setRoomMode(!document.body.classList.contains("host-mode"));
+});
+document.getElementById("chat-button").addEventListener("click", () => setRoomMode(false));
+document.getElementById("back-to-room").addEventListener("click", () => setRoomMode(false));
+document.getElementById("mute-all-button")?.addEventListener("click", () => runRoomControl("mute_all"));
+document.getElementById("toggle-chat-button")?.addEventListener("click", () => runRoomControl("toggle_chat"));
+document.getElementById("toggle-lock-button")?.addEventListener("click", () => runRoomControl("toggle_lock"));
+
+const micButton = document.getElementById("mic-button");
+const cameraButton = document.getElementById("camera-button");
+const screenButton = document.getElementById("screen-button");
+
+micButton.addEventListener("click", async () => {
+    try {
+        micEnabled = !micEnabled;
+        await room.localParticipant.setMicrophoneEnabled(micEnabled);
+        micButton.textContent = micEnabled ? "Mic" : "Mic off";
+        await postAction(updateMicrophoneUrl, {muted: String(!micEnabled)});
+    } catch (error) {
+        participantError.textContent = error.message;
+    }
+});
+
+cameraButton.addEventListener("click", async () => {
+    try {
+        cameraEnabled = !cameraEnabled;
+        await room.localParticipant.setCameraEnabled(cameraEnabled);
+        cameraButton.textContent = cameraEnabled ? "Camera" : "Camera off";
+    } catch (error) {
+        participantError.textContent = error.message;
+    }
+});
+
+screenButton.addEventListener("click", async () => {
+    try {
+        screenEnabled = !screenEnabled;
+        await room.localParticipant.setScreenShareEnabled(screenEnabled);
+        screenButton.textContent = screenEnabled ? "Stop sharing" : "Share screen";
+    } catch (error) {
+        screenEnabled = false;
+        participantError.textContent = error.message;
+    }
+});
+
+document.getElementById("leave-button").addEventListener("click", async () => {
+    if (chatSocket) chatSocket.close();
+    document.getElementById("leave-form").submit();
+});
+
+async function connectRoom() {
+    try {
+        connectChat();
+        const response = await fetch(
+            "{% url 'session_token' session.room_name %}",
+            {credentials: "same-origin"}
+        );
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not get room access.");
+
+        room = new Room();
+        room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+            let tile = participantTiles.get(participant.identity);
+            if (!tile) tile = createTile(participant.identity, participant.name);
+            attachTrack(track, tile);
+        });
+        room.on(RoomEvent.ParticipantDisconnected, participant => removeParticipant(participant.identity));
+        room.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+            track.detach().forEach(element => element.remove());
+        });
+
+        await room.connect(data.url, data.token);
+        if (isHost) {
+            try {
+                await postAction(startPreviewRecordingUrl);
+                document.getElementById("recording-indicator").textContent = "RECORDING";
+            } catch (error) {
+                await room.disconnect();
+                if (chatSocket) chatSocket.close();
+                throw error;
+            }
+        }
+        await room.localParticipant.enableCameraAndMicrophone();
+        const localBadge = localTile.querySelector(".tile-profile-link, .tile-label");
+        localTile.replaceChildren(localBadge);
+        room.localParticipant.videoTrackPublications.forEach(publication => {
+            if (publication.track) attachTrack(publication.track, localTile);
+        });
+        micButton.disabled = false;
+        cameraButton.disabled = false;
+        screenButton.disabled = false;
+        statusElement.textContent = "Connected";
+    } catch (error) {
+        statusElement.textContent = error.message;
+    }
+}
+
+connectRoom();
+refreshParticipants();
+const participantRefreshTimer = window.setInterval(refreshParticipants, 3000);
+window.addEventListener("beforeunload", () => window.clearInterval(participantRefreshTimer));
+</script>
+</body>
+</html>

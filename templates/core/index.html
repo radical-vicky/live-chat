@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}RADEV LIVE — Go live. Meet. Learn. Together.{% endblock %}
+
+{% block extra_css %}
+/* Global Landing Reset */
+.landing-container {
+    background-color: #050505;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding-top: 70px; /* Offset for the fixed navbar */
+}
+
+/* =========================================
+   STICKY NAVBAR
+   ========================================= */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    
+    /* Glassmorphism effect */
+    background: rgba(5, 5, 5, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    
+    transition: all 0.3s ease;
+}
+
+.brand-logo {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #FFFFFF;
+    letter-spacing: 0.5px;
+}
+
+.nav-links, .nav-actions-desktop { display: none; }
+
+/* =========================================
+   MOBILE VIEW (Default)
+   ========================================= */
+.hero-section {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 1.5rem 2rem;
+    gap: 2rem;
+}
+
+.hero-left h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+    color: #FFFFFF;
+}
+
+.hero-left p {
+    font-size: 0.95rem;
+    color: #A1A1AA;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+}
+
+.hero-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.btn-primary-orange, .btn-secondary-dark {
+    width: 100%;
+    padding: 0.85rem 1.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-align: center;
+    display: block;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.btn-primary-orange:active, .btn-secondary-dark:active {
+    transform: scale(0.98);
+}
+
+.btn-primary-orange { background-color: #F97316; color: white; }
+.btn-secondary-dark { background-color: #27272A; color: white; }
+
+/* 2x2 Grid for Mobile */
+.hero-right {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.tile {
+    background-color: #121214;
+    border-radius: 0.75rem;
+    position: relative;
+    height: 130px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0.5rem;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.tile:active { transform: scale(0.97); }
+
+.tile-amina { background: linear-gradient(135deg, #1E3A8A 0%, #000000 100%); }
+.tile-brian { background: linear-gradient(135deg, #064E3B 0%, #000000 100%); }
+.tile-cheryl { background: linear-gradient(135deg, #4C1D95 0%, #000000 100%); }
+.tile-dan { background: linear-gradient(135deg, #1D4ED8 0%, #000000 100%); }
+.tile { background-size: cover; background-position: center; }
+
+.tile-badge {
+    background-color: #EF4444;
+    color: white;
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.25rem;
+    width: fit-content;
+    letter-spacing: 0.5px;
+}
+
+.tile-label {
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+/* Features Box (Mobile) */
+.features-row {
+    padding: 1.5rem;
+}
+
+.feature-card {
+    background-color: #121214;
+    border: 1px solid #27272A;
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    width: 100%;
+}
+
+.feature-card p {
+    font-size: 0.85rem;
+    color: #A1A1AA;
+    line-height: 1.5;
+}
+
+.feature-card:not(:first-child) { display: none; }
+
+
+/* =========================================
+   DESKTOP VIEW (1024px and up)
+   ========================================= */
+@media (min-width: 1024px) {
+    .navbar { padding: 1.25rem 4rem; }
+    
+    .nav-links {
+        display: flex;
+        gap: 2.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #A1A1AA;
+    }
+    
+    .nav-links a {
+        transition: color 0.2s;
+        position: relative;
+    }
+    .nav-links a:hover { color: #FFFFFF; }
+    
+    /* Subtle hover underline */
+    .nav-links a::after {
+        content: '';
+        position: absolute;
+        width: 0%;
+        height: 2px;
+        bottom: -4px;
+        left: 0;
+        background-color: #F97316;
+        transition: width 0.3s ease;
+    }
+    .nav-links a:hover::after { width: 100%; }
+
+    .nav-actions-desktop {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .btn-login {
+        background-color: transparent;
+        color: #FFFFFF;
+        padding: 0.6rem 1.25rem;
+        border-radius: 999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border: 1px solid #27272A;
+        transition: all 0.2s;
+    }
+    .btn-login:hover {
+        background-color: #27272A;
+    }
+
+    .btn-signup {
+        background-color: #F97316;
+        color: #FFFFFF;
+        padding: 0.6rem 1.25rem;
+        border-radius: 999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        transition: background 0.2s;
+    }
+    .btn-signup:hover { background-color: #EA580C; }
+
+    .hero-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        padding: 6rem 4rem 4rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        align-items: center;
+    }
+
+    .hero-left h1 { font-size: 4.5rem; margin-bottom: 1.5rem; }
+    .hero-left p { font-size: 1.125rem; margin-bottom: 2.5rem; max-width: 90%; }
+    
+    .hero-buttons {
+        flex-direction: row;
+        gap: 1rem;
+    }
+    .btn-primary-orange, .btn-secondary-dark {
+        width: auto;
+        display: inline-block;
+    }
+
+    .hero-right {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 1rem;
+        height: 420px;
+    }
+
+    .tile { height: auto; padding: 1rem; border-radius: 1.25rem; cursor: pointer; }
+    .tile:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+    .tile-badge { display: none; }
+    .tile-label { font-size: 0.75rem; background: rgba(0,0,0,0.6); padding: 0.25rem 0.75rem; border-radius: 999px; }
+
+    .features-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 4rem 4rem;
+    }
+    
+    .feature-card:not(:first-child) { display: block; }
+}
+{% endblock %}
+
+{% block public_content %}
+<div class="landing-container">
+    
+    <!-- Sticky Navbar -->
+    <nav class="navbar">
+        <a href="{% url 'core:home' %}" class="brand-logo">RADEV LIVE</a>
+        
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="{% url 'explore_sessions' %}">Explore</a>
+            <a href="#features">How it works</a>
+        </div>
+        
+        <div class="nav-actions-desktop">
+            {% if user.is_authenticated %}
+                <a href="{% url 'core:dashboard' %}" class="btn-signup">Dashboard</a>
+                <form method="post" action="{% url 'account_logout' %}" style="margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-login" style="border: none; cursor: pointer;">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url 'account_login' %}" class="btn-login">Log in</a>
+                <a href="{% url 'account_signup' %}" class="btn-signup">Sign up free</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Main Hero -->
+    <main class="hero-section">
+        
+        <div class="hero-left">
+            <h1>Go live. Meet. Learn. Together.</h1>
+            <p>Create a session in seconds, or join a live room from a link or meeting code.</p>
+            
+            <div class="hero-buttons">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'create_session' %}" class="btn-primary-orange">Start a session</a>
+                {% else %}
+                    <a href="{% url 'account_signup' %}" class="btn-primary-orange">Start a session</a>
+                {% endif %}
+                <a href="{% if user.is_authenticated %}{% url 'join_meeting' %}{% else %}{% url 'account_login' %}{% endif %}" class="btn-secondary-dark">Join with code</a>
+            </div>
+        </div>
+
+        <div class="hero-right">
+            {% for session in live_sessions %}
+            <a href="{% url 'session_detail' session.room_name %}" class="tile {% cycle 'tile-amina' 'tile-brian' 'tile-cheryl' 'tile-dan' %}"{% if session.thumbnail %} style="background-image:linear-gradient(0deg,rgba(0,0,0,.75),rgba(0,0,0,.08)),url('{{ session.thumbnail.url }}')"{% endif %}>
+                <span class="tile-badge">LIVE</span>
+                <span class="tile-label">{{ session.title }}</span>
+            </a>
+            {% empty %}
+            <div class="tile tile-amina"><span class="tile-label">No sessions are live yet</span></div>
+            <div class="tile tile-brian"><span class="tile-label">Explore upcoming events</span></div>
+            {% endfor %}
+        </div>
+
+    </main>
+
+    <!-- Bottom Features Row -->
+    <div class="features-row" id="features">
+        <div class="feature-card">
+            <p>Public or private sessions, host controls, chat and screen sharing.</p>
+        </div>
+        <div class="feature-card">
+            <h3>Join anywhere</h3>
+            <p>Open a link or type a meeting code on any device.</p>
+        </div>
+        <div class="feature-card">
+            <h3>Host controls</h3>
+            <p>Mute, remove and manage everyone in the room.</p>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

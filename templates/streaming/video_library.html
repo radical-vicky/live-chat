@@ -1,0 +1,90 @@
+{% extends "base_app.html" %}
+{% block title %}Videos — RADEV LIVE{% endblock %}
+{% block body_class %}video-library-view{% endblock %}
+{% block extra_css %}
+.videos-page{width:100%;max-width:1280px;margin:0 auto}
+.videos-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:1.2rem}
+.videos-heading h1{font-size:1.45rem}
+.videos-heading p{margin-top:.25rem;color:#aaa;font-size:.8rem}
+.video-actions{display:flex;align-items:center;gap:.55rem}
+.video-search{display:flex;gap:.4rem}
+.video-search input{width:min(280px,35vw);padding:.6rem .8rem;border:1px solid #292929;border-radius:999px;background:#151515;color:white}
+.video-search button,.video-upload-link{border:0;border-radius:999px;background:#ff7800;color:#111;padding:.6rem .9rem;font-size:.75rem;font-weight:700}
+.video-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.35rem 2rem}
+.video-card{min-width:0}
+.video-card-thumb{position:relative;display:block;aspect-ratio:16/9;overflow:hidden;border:1px solid #30343a;background:#080808}
+.video-card-thumb img{width:100%;height:100%;object-fit:cover;transition:transform .2s ease}
+.video-card-thumb:hover img{transform:scale(1.025)}
+.video-card-views{position:absolute;right:.45rem;bottom:.4rem;color:white;font-size:.8rem;font-weight:700;text-shadow:0 1px 5px #000,0 1px 2px #000}
+.video-card-info{padding:.45rem 0}
+.video-card-title{display:block;overflow:hidden;font-size:.82rem;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+.video-creator{display:flex;align-items:center;gap:.45rem;margin-top:.55rem;color:#aaa;font-size:.7rem}
+.video-creator-avatar{width:25px;height:25px;overflow:hidden;border-radius:50%;background:#343434}
+.video-creator-avatar img{width:100%;height:100%;object-fit:cover}
+.video-empty{grid-column:1/-1;padding:1.4rem;border:1px dashed #343434;border-radius:12px;color:#aaa;text-align:center}
+.video-pagination{display:flex;align-items:center;justify-content:center;gap:1rem;margin:1.5rem 0;color:#aaa;font-size:.75rem}
+.video-pagination a{padding:.45rem .7rem;border:1px solid #303030;border-radius:6px;color:#eee}
+.video-pagination a:hover{border-color:#ff7800;color:#ff7800}
+@media(max-width:1100px){.video-grid{gap:1rem}}
+@media(max-width:760px){.videos-heading{align-items:stretch;flex-direction:column}.videos-heading h1{font-size:1.1rem}.videos-heading p{font-size:.68rem}.video-actions{align-items:stretch;flex-direction:column}.video-search input{width:100%}.video-search{width:100%}.video-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.9rem}.video-card-title{font-size:.72rem}.video-creator{font-size:.57rem}}
+@media(max-width:420px){.video-grid{gap:.65rem}.video-card-info{padding:.35rem 0}.video-card-views{font-size:.7rem}}
+{% endblock %}
+{% block content %}
+<main class="videos-page">
+  <header class="videos-heading">
+    <div>
+      <h1>Video library</h1>
+      <p>{% if creator %}Videos by @{{ creator }}{% else %}Watch videos shared by the RADEV LIVE community.{% endif %}</p>
+    </div>
+    <div class="video-actions">
+      <form class="video-search" method="get" role="search">
+        {% if creator %}<input type="hidden" name="creator" value="{{ creator }}">{% endif %}
+        <input type="search" name="q" value="{{ query }}" placeholder="Search videos">
+        <button type="submit">Search</button>
+      </form>
+      {% if user.is_authenticated %}
+      <a class="video-upload-link" href="{% url 'video_upload' %}">Upload a video</a>
+      {% endif %}
+    </div>
+  </header>
+  <section class="video-grid" aria-label="Public videos">
+    {% for video in videos %}
+    <article class="video-card">
+      <a class="video-card-thumb" href="{% url 'video_detail' video.pk %}" aria-label="Watch {{ video.title }}">
+        <img src="{{ video.thumbnail_url }}" alt="" {% if forloop.first %}loading="eager" fetchpriority="high"{% else %}loading="lazy"{% endif %} decoding="async">
+        <span class="video-card-views">{{ video.view_count }}</span>
+      </a>
+      <div class="video-card-info">
+        <a class="video-card-title" href="{% url 'video_detail' video.pk %}">{{ video.title }}</a>
+        {% if video.owner.profile.username %}
+        <a class="video-creator" href="{% url 'user_profile' video.owner.profile.username %}">
+          <span class="video-creator-avatar">
+            {% if video.owner.profile.avatar %}<img src="{{ video.owner.profile.avatar.url }}" alt="">{% endif %}
+          </span>
+          <span>{{ video.owner.profile.full_name|default:video.owner.get_username }}</span>
+        </a>
+        {% else %}
+        <div class="video-creator">
+          <span class="video-creator-avatar"></span>
+          <span>{{ video.owner.get_username }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </article>
+    {% empty %}
+    <p class="video-empty">{% if query %}No videos match your search.{% else %}No videos have been uploaded yet.{% endif %}</p>
+    {% endfor %}
+  </section>
+  {% if videos.has_other_pages %}
+  <nav class="video-pagination" aria-label="Video pages">
+    {% if videos.has_previous %}
+    <a href="?{% if query %}q={{ query|urlencode }}&amp;{% endif %}{% if creator %}creator={{ creator|urlencode }}&amp;{% endif %}page={{ videos.previous_page_number }}">Previous</a>
+    {% endif %}
+    <span>Page {{ videos.number }} of {{ videos.paginator.num_pages }}</span>
+    {% if videos.has_next %}
+    <a href="?{% if query %}q={{ query|urlencode }}&amp;{% endif %}{% if creator %}creator={{ creator|urlencode }}&amp;{% endif %}page={{ videos.next_page_number }}">Next</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+</main>
+{% endblock %}

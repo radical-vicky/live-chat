@@ -1,0 +1,272 @@
+{% extends "base_app.html" %}
+{% load static %}
+
+{% block title %}Dashboard — RADEV LIVE{% endblock %}
+{% block body_class %}dashboard-view{% endblock %}
+
+{% block extra_css %}
+/* Hero Banner */
+.hero-banner {
+    background: linear-gradient(135deg, #EA580C 0%, #431407 100%);
+    border-radius: 1rem;
+    padding: 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-banner::before {
+    content: '';
+    position: absolute;
+    right: -10%; top: -50%;
+    width: 300px; height: 300px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    filter: blur(40px);
+}
+
+.hero-text h1 { font-size: 2.5rem; font-weight: 800; color: white; margin-bottom: 0.5rem; }
+.hero-text p { font-size: 1rem; color: rgba(255,255,255,0.9); margin-bottom: 1.5rem; max-width: 400px; }
+.hero-buttons { display: flex; gap: 1rem; }
+
+.btn-hero-primary {
+    background-color: var(--brand-orange);
+    color: white;
+    padding: 0.6rem 1.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: background 0.2s;
+}
+.btn-hero-primary:hover { background-color: var(--brand-orange-hover); }
+
+.btn-hero-secondary {
+    background-color: transparent;
+    color: white;
+    padding: 0.6rem 1.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border: 1px solid rgba(255,255,255,0.3);
+    transition: background 0.2s;
+}
+.btn-hero-secondary:hover { background-color: rgba(255,255,255,0.1); }
+
+/* Section Headers */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    margin-top: 1rem;
+}
+.section-header h2 { font-size: 1.25rem; font-weight: 700; }
+.section-header a { font-size: 0.875rem; color: var(--brand-orange); font-weight: 600; }
+
+/* Session Grid */
+.session-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 1rem;
+}
+
+.session-card {
+    background-color: var(--bg-surface);
+    border-radius: 0.75rem;
+    height: 180px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s;
+}
+
+.session-card:hover { transform: translateY(-2px); border-color: var(--text-muted); }
+
+.session-badge {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    background-color: var(--danger);
+    color: white;
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.25rem;
+    z-index: 2;
+}
+
+.session-badge.free {
+    background-color: #FAFAFA;
+    color: #000;
+}
+
+/* Dark overlay for card text */
+.session-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 60%);
+    z-index: 1;
+}
+
+.session-title {
+    position: relative;
+    z-index: 2;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: white;
+    line-height: 1.2;
+}
+
+/* Card background colors */
+.bg-blue { background: linear-gradient(135deg, #1E3A8A 0%, #000 100%); }
+.bg-teal { background: linear-gradient(135deg, #0F766E 0%, #000 100%); }
+.bg-red { background: linear-gradient(135deg, #991B1B 0%, #000 100%); }
+.bg-purple { background: linear-gradient(135deg, #4C1D95 0%, #000 100%); }
+.bg-indigo { background: linear-gradient(135deg, #3730A3 0%, #000 100%); }
+.bg-pink { background: linear-gradient(135deg, #831843 0%, #000 100%); }
+
+/* Right Sidebar Widgets */
+.widget {
+    background-color: var(--bg-surface);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+.widget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.widget-header h3 { font-size: 1rem; font-weight: 700; }
+.widget-header a { font-size: 0.75rem; color: var(--brand-orange); font-weight: 600; }
+
+.live-item { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
+.live-item:last-child { margin-bottom: 0; }
+.live-thumb {
+    width: 80px; height: 50px;
+    border-radius: 0.5rem;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #1D4ED8 0%, #000 100%);
+}
+.live-now-thumbnail { position:absolute; inset:0; z-index:0; width:100%; height:100%; border-radius:inherit; object-fit:cover; }
+.live-thumb::after,.mobile-live-thumb::after { position:absolute; z-index:1; inset:0; border-radius:inherit; background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.35)); content:""; pointer-events:none; }
+.live-thumb .session-badge { top: 0.25rem; left: 0.25rem; }
+.live-info h4 { font-size: 0.8rem; font-weight: 600; margin-bottom: 0.2rem; }
+.live-info p { font-size: 0.7rem; color: var(--text-muted); }
+
+.cta-widget { background: linear-gradient(135deg, #C2410C 0%, #431407 100%); border: none; }
+.cta-widget h3 { color: white; font-size: 1.1rem; margin-bottom: 0.5rem; }
+.cta-widget p { color: rgba(255,255,255,0.8); font-size: 0.8rem; margin-bottom: 1rem; }
+.cta-widget .btn-hero-primary { background: white; color: #C2410C; }
+.mobile-live-now { display:none; }
+.mobile-hero-title{display:none}
+.session-grid>.text-muted,.mobile-live-grid>.text-muted{grid-column:1/-1;margin:0;padding:1rem 1.1rem;border:1px dashed #343434;border-radius:12px;background:#121212;color:var(--text-muted);font-size:.9rem;line-height:1.55}
+@media(max-width:1100px){.mobile-live-now{display:block}}
+@media(max-width:760px){
+  .hero-banner{min-height:0;align-items:flex-start;padding:22px 18px;border-radius:14px;background:linear-gradient(135deg,#bd4e00 0%,#080808 95%)}
+  .hero-banner::before{display:none}
+  .desktop-hero-title{display:none}
+  .hero-text .mobile-hero-title{display:block;max-width:300px;margin-bottom:9px;font-size:1.5rem;line-height:1.08}
+  .hero-text p{max-width:38ch;margin-bottom:15px;font-size:.88rem;line-height:1.5}
+  .hero-buttons{gap:8px;flex-wrap:wrap}
+  .btn-hero-primary,.btn-hero-secondary{display:inline-flex;min-height:44px;align-items:center;justify-content:center;padding:9px 15px;font-size:.78rem}
+  .section-header{margin:1.15rem 0 .6rem}
+  .section-header h2{font-size:1rem}
+  .section-header a{font-size:.75rem}
+  .session-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .session-card{height:118px;padding:10px;border-radius:10px}
+  .session-badge{top:8px;left:8px;padding:3px 6px;font-size:.6rem}
+  .session-title{font-size:.82rem;line-height:1.3}
+  .session-grid>.text-muted,.mobile-live-grid>.text-muted{padding:14px 15px;border-radius:10px;font-size:.88rem}
+  .mobile-live-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:9px}
+  .mobile-live-card{position:relative;display:flex;min-height:62px;align-items:center;gap:10px;overflow:hidden;border:1px solid #292929;border-radius:10px;background:#151515;padding:9px;font-size:.82rem}
+  .mobile-live-thumb{position:relative;width:68px;height:42px;flex:0 0 68px;overflow:hidden;border-radius:6px;background:linear-gradient(135deg,#1956c1,#0b1429)}
+  .mobile-live-card:nth-child(2n) .mobile-live-thumb{background:linear-gradient(135deg,#087d77,#0b2725)}
+  .mobile-live-thumb .session-badge{top:4px;left:4px}
+}
+{% endblock %}
+
+{% block content %}
+<!-- Hero Banner -->
+<div class="hero-banner">
+    <div class="hero-text">
+        <h1 class="desktop-hero-title">RADEV <span style="color: var(--brand-orange);">LIVE</span></h1>
+        <h1 class="mobile-hero-title">Go Live. Watch. Connect.</h1>
+        <p>Go Live. Watch. Connect. Join live sessions from hosts worldwide.</p>
+        <div class="hero-buttons">
+            <a href="{% url 'explore_sessions' %}" class="btn-hero-primary">Watch Live</a>
+            <a href="{% url 'create_session' %}" class="btn-hero-secondary">Create Live Session</a>
+        </div>
+    </div>
+</div>
+
+<section class="mobile-live-now">
+  <div class="section-header"><h2>Live Now</h2><a href="{% url 'explore_sessions' %}">View all</a></div>
+  <div class="mobile-live-grid">
+    {% for session in live_now %}
+    <a class="mobile-live-card" href="{% url 'session_detail' session.room_name %}">
+      <span class="mobile-live-thumb">
+        {% if session.thumbnail %}<img class="live-now-thumbnail" src="{{ session.thumbnail.url }}" alt="" loading="lazy">{% endif %}
+        <span class="session-badge">LIVE</span>
+      </span>
+      <span>{{ session.title }}</span>
+    </a>
+    {% empty %}<p class="text-muted">No one is live right now.</p>{% endfor %}
+  </div>
+</section>
+
+<div class="section-header"><h2>Trending sessions</h2><a href="{% url 'explore_sessions' %}">Explore all</a></div>
+<div class="session-grid">
+    {% for session in trending %}
+    <a href="{% url 'session_detail' session.room_name %}" class="session-card bg-blue">
+        <span class="session-badge {% if session.status == 'scheduled' %}free{% endif %}">{{ session.get_status_display|upper }}</span>
+        <span class="session-title">{{ session.title }}</span>
+    </a>
+    {% empty %}<p class="text-muted">No public sessions yet. Create one or explore again later.</p>{% endfor %}
+</div>
+
+<!-- Upcoming Lives -->
+<div class="section-header"><h2>Your upcoming sessions</h2><a href="{% url 'upcoming_sessions' %}">Browse schedule</a></div>
+<div class="session-grid">
+    {% for session in my_scheduled %}
+    <a href="{% url 'session_detail' session.room_name %}" class="session-card bg-indigo">
+        <span class="session-badge free">UPCOMING</span>
+        <span class="session-title">{{ session.title }}</span>
+    </a>
+    {% empty %}<p class="text-muted">You have no upcoming sessions.</p>{% endfor %}
+</div>
+{% endblock %}
+
+{% block right_sidebar %}
+<!-- Live Now Widget -->
+<div class="widget">
+    <div class="widget-header">
+        <h3>Live Now</h3>
+        <a href="{% url 'explore_sessions' %}">View all</a>
+    </div>
+    
+    {% for session in live_now %}
+    <a class="live-item" href="{% url 'session_detail' session.room_name %}">
+        <div class="live-thumb">
+            {% if session.thumbnail %}<img class="live-now-thumbnail" src="{{ session.thumbnail.url }}" alt="" loading="lazy">{% endif %}
+            <span class="session-badge">LIVE</span>
+        </div>
+        <div class="live-info"><h4>{{ session.title }}</h4><p>{{ session.active_participant_count }} attending · {{ session.get_category_display }}</p></div>
+    </a>
+    {% empty %}<p class="text-muted">No one is live right now.</p>{% endfor %}
+</div>
+
+<!-- CTA Widget -->
+<div class="widget cta-widget">
+    <h3>Create Your Live Session</h3>
+    <p>Go Live. Share Ideas. Grow Together.</p>
+    <a href="{% url 'create_session' %}" class="btn-hero-primary" style="display: inline-block;">Go Live Now</a>
+</div>
+
+{% endblock %}

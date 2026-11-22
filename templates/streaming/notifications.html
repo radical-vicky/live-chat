@@ -1,0 +1,55 @@
+{% extends "base_app.html" %}
+{% block title %}Notifications — RADEV LIVE{% endblock %}
+{% block body_class %}notifications-view{% endblock %}
+{% block extra_css %}
+.tabs{display:flex;gap:.5rem;margin-bottom:.8rem}.tabs button{border:0;font:inherit;font-size:.68rem;padding:.38rem .72rem;border-radius:999px;background:#17182b;color:white;cursor:pointer}.tabs button.active{background:#e27918}.notice{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:.7rem;padding:.6rem .15rem;border-bottom:1px solid #17182b}.notice-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1e55bd,#08132b)}.notice strong{font-size:.68rem}.notice small{display:block;font-size:.58rem;color:#aaaab7}.notice a{color:inherit}.join{border:0;border-radius:999px;background:#e27918;color:white;font-size:.65rem;padding:.42rem .7rem;cursor:pointer}.unread{width:7px;height:7px;border-radius:50%;background:#e27918}
+@media(max-width:760px){.notice{grid-template-columns:30px minmax(0,1fr) auto;gap:7px;margin-bottom:5px;border:1px solid #242424;border-radius:7px;background:#151515;padding:7px}.notice-avatar{width:30px;height:30px}.notice strong{font-size:.56rem}.notice small{font-size:.48rem}.join{padding:5px 8px;font-size:.5rem}.tabs{gap:5px;margin-bottom:8px}.tabs button{padding:5px 9px;font-size:.54rem}}
+{% endblock %}
+{% block content %}
+<h1 style="font-size:1.15rem;margin-bottom:1.25rem">Notifications{% if unread_count %} <span style="font-size:.7rem;color:#aaaab7">({{ unread_count }} unread)</span>{% endif %}</h1>
+<div class="tabs"><button class="active" type="button" data-filter="all">All</button><button type="button" data-filter="unread">Unread</button></div>
+<div id="notification-list">
+{% for notification in notifications %}
+<article class="notice" data-unread="{% if notification.read_at %}false{% else %}true{% endif %}">
+  <div class="notice-avatar"></div>
+  <div><a href="{% if notification.session %}{% url 'session_detail' notification.session.room_name %}{% else %}{% url 'messages' %}{% endif %}"><strong>{{ notification.message }}</strong></a><small>{{ notification.created_at|timesince }} ago{% if notification.session %} · {{ notification.session.title }}{% endif %}</small></div>
+  {% if not notification.read_at %}<form method="post" action="{% url 'mark_notification_read' notification.pk %}">{% csrf_token %}<button class="join" type="submit">Mark read</button></form>{% else %}<span aria-label="Read">Read</span>{% endif %}
+</article>
+{% empty %}<p class="text-muted" id="empty-notifications">You're all caught up. New live-session activity and messages will show here.</p>{% endfor %}
+</div>
+<script>
+(() => {
+  const list = document.getElementById("notification-list");
+  document.querySelectorAll(".tabs button").forEach(button => button.addEventListener("click", () => {
+    document.querySelectorAll(".tabs button").forEach(tab => tab.classList.remove("active"));
+    button.classList.add("active");
+    list.querySelectorAll(".notice").forEach(row => row.hidden = button.dataset.filter === "unread" && row.dataset.unread !== "true");
+  }));
+  const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+  const socket = new WebSocket(`${protocol}//${location.host}/ws/notifications/`);
+  socket.addEventListener("message", event => {
+    const data = JSON.parse(event.data);
+    if (data.type !== "notification") return;
+    const empty = document.getElementById("empty-notifications");
+    if (empty) empty.remove();
+    const row = document.createElement("article");
+    row.className = "notice";
+    row.dataset.unread = "true";
+    const avatar = document.createElement("div");
+    avatar.className = "notice-avatar";
+    const content = document.createElement("div");
+    const link = document.createElement("a");
+    link.href = data.url || "#";
+    const title = document.createElement("strong");
+    title.textContent = data.message;
+    link.appendChild(title);
+    const detail = document.createElement("small");
+    detail.textContent = data.session_title ? `Just now · ${data.session_title}` : "Just now";
+    content.append(link, detail);
+    row.append(avatar, content);
+    list.prepend(row);
+  });
+  window.addEventListener("beforeunload", () => socket.close());
+})();
+</script>
+{% endblock %}

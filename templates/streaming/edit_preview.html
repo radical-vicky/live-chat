@@ -1,0 +1,21 @@
+{% extends "base_app.html" %}
+{% block title %}Edit preview — RADEV LIVE{% endblock %}
+{% block body_class %}edit-preview-view{% endblock %}
+{% block extra_css %}
+.edit-preview{max-width:680px}.edit-preview h1{font-size:1.15rem;margin-bottom:.5rem}.edit-preview p{color:#aaaab7;font-size:.75rem;margin-bottom:1rem}.preview-field{margin-bottom:.8rem}.preview-field label{display:block;color:#b1b1bd;font-size:.68rem;margin-bottom:.35rem}.preview-field input,.preview-field textarea{width:100%;border:1px solid #333;border-radius:7px;background:#171717;color:#fff;padding:.7rem;font:inherit;font-size:.75rem}.preview-field .errorlist{color:#ff7373;font-size:.65rem}.edit-preview button{border:0;border-radius:999px;background:#e27918;color:white;padding:.6rem 1rem;font-size:.72rem}.edit-preview .cancel{margin-left:.5rem;color:#aaa;font-size:.72rem}@media(max-width:760px){.edit-preview h1{font-size:.9rem}.edit-preview p{font-size:.58rem}.preview-field{margin-bottom:8px}.preview-field label{font-size:.55rem}.preview-field input,.preview-field textarea{padding:8px;font-size:.58rem}.edit-preview button,.edit-preview .cancel{font-size:.56rem}}
+{% endblock %}
+{% block content %}
+<section class="edit-preview">
+  <h1>Edit preview details</h1>
+  <p>Changes update the preview listing and thumbnail. The recorded video itself is unchanged.</p>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+      <div class="preview-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>
+    {% endfor %}
+    <button type="submit">Save changes</button>
+    <a class="cancel" href="{% url 'session_detail' session.room_name %}">Cancel</a>
+  </form>
+</section>
+{% endblock %}

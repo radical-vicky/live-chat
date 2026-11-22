@@ -1,0 +1,226 @@
+{% extends "base_app.html" %}
+{% block title %}Create session — RADEV LIVE{% endblock %}
+{% block body_class %}create-session-view{% endblock %}
+{% block extra_css %}
+.create-layout { display:grid; max-width:1100px; grid-template-columns:minmax(0,3fr) minmax(170px,1fr); align-items:start; gap:14px; margin:0 auto; }
+.create-form-panel { min-width:0; border:1px solid #252525; border-radius:12px; background:#151515; padding:15px; }
+.create-heading { margin-bottom:12px; }
+.create-heading h1 { margin:0; font-size:1rem; line-height:1.3; }
+.create-fields { display:grid; grid-template-columns:minmax(0,1fr); gap:9px; }
+.field { min-width:0; margin:0; }
+.field label,.field-label { display:block; margin-bottom:5px; color:#d5d5d5; font-size:.7rem; font-weight:500; }
+.field input,.field textarea,.field select { width:100%; min-height:38px; border:1px solid #292929; border-radius:10px; background:#090909; color:#f5f5f5; padding:9px 11px; font-size:.78rem; }
+.create-form-panel .field textarea { min-height:76px; resize:vertical; }
+.field input:focus,.field textarea:focus,.field select:focus { border-color:#ff7900; outline:2px solid rgba(255,121,0,.2); }
+.field-description,.field-participant_limit,.field-thumbnail { grid-column:1; }
+.field-thumbnail input[type="file"] { height:auto; padding:8px; font-size:.78rem; }
+.field-thumbnail input[type="file"]::file-selector-button { margin-right:10px; border:0; border-radius:7px; background:#292929; padding:8px 10px; color:#fff; font:inherit; }
+.field .errorlist,.recording-consent .errorlist,.non-field-errors .errorlist { margin:5px 0 0; color:#ff7070; font-size:.75rem; }
+.visibility-options { display:flex; flex-wrap:wrap; gap:8px; }
+.visibility-option { position:relative; display:inline-flex !important; margin:0 !important; cursor:pointer; }
+.visibility-option input { position:absolute; width:1px; height:1px; opacity:0; }
+.visibility-option span { display:inline-flex; min-width:62px; min-height:34px; align-items:center; justify-content:center; border-radius:999px; background:#202020; padding:7px 15px; color:#f5f5f5; font-size:.75rem; font-weight:600; }
+.visibility-option input:checked + span { background:#ff7900; color:#111; }
+.visibility-option input:focus-visible + span { outline:2px solid #fff; outline-offset:2px; }
+.description-details { display:block; }
+.description-details > summary { display:none; }
+.description-fields { display:grid; }
+.more-options { margin-top:9px; border-top:1px solid #292929; padding-top:7px; }
+.more-options > summary { color:#999; cursor:pointer; font-size:.68rem; }
+.more-options-fields { display:grid; gap:12px; padding-top:10px; }
+.more-options:not([open]) .more-options-fields { display:none; }
+.recording-consent { display:grid; grid-template-columns:18px minmax(0,1fr); align-items:start; gap:9px; margin:10px 0 0; color:#c8c8c8; font-size:.75rem; line-height:1.45; }
+.recording-consent input { width:17px; height:17px; margin:1px 0 0; accent-color:#ff7900; }
+.recording-consent label { cursor:pointer; }
+.consent-message { display:none; margin:5px 0 0; color:#ff9a3c; font-size:.72rem; }
+.create-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.create-actions button { min-height:34px; border:1px solid transparent; border-radius:999px; padding:8px 18px; font-size:.74rem; font-weight:700; }
+.go { background:#ff7900; color:#111; }
+.go:hover { background:#ff922b; }
+.draft { border-color:#333 !important; background:#202020; color:#eee; }
+.draft:hover { background:#2b2b2b; }
+.create-preview-panel { min-width:0; padding-top:2px; }
+.preview-heading { margin-bottom:7px; color:#f5f5f5; font-size:.78rem; font-weight:700; }
+.preview-card { position:relative; display:flex; width:100%; min-height:220px; flex-direction:column; justify-content:space-between; overflow:hidden; border:0; border-radius:8px; background:linear-gradient(145deg,#245bd0,#101522 85%); padding:8px; color:white; text-align:left; cursor:pointer; }
+.preview-card:focus-visible { outline:2px solid #ff7900; outline-offset:3px; }
+.preview-card img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(.55); }
+.preview-status { position:relative; z-index:1; align-self:flex-start; border-radius:3px; background:#e33232; padding:3px 6px; color:white; font-size:.58rem; font-weight:700; }
+.preview-card strong { position:relative; z-index:1; color:white; font-size:.82rem; line-height:1.3; overflow-wrap:anywhere; text-shadow:0 1px 4px #000; }
+.create-layout .non-field-errors { margin-top:8px; color:#ff7070; }
+@media(max-width:760px) {
+    .create-layout { display:block; }
+    .create-form-panel { border:0; border-radius:0; background:transparent; padding:0; }
+    .create-heading { margin:0 0 12px; }
+    .create-heading h1 { font-size:1rem; }
+    .create-fields { gap:9px; }
+    .field label,.field-label { margin-bottom:4px; font-size:.65rem; }
+    .create-session-view .field input,.create-session-view .field textarea,.create-session-view .field select {
+        min-height:38px !important;
+        border-radius:9px;
+        background:#090909;
+        padding:8px 10px;
+        font-size:.8rem !important;
+    }
+    .create-session-view .field textarea { min-height:72px !important; }
+    .description-details { display:block; margin-top:8px; border-top:1px solid #252525; padding-top:7px; }
+    .description-details > summary { display:block; color:#aaa; cursor:pointer; font-size:.72rem; }
+    .description-fields { display:grid; gap:9px; padding-top:9px; }
+    .description-details:not([open]) .description-fields { display:none; }
+    .field-visibility { order:1; }
+    .description-details { order:2; }
+    .more-options { margin-top:8px; }
+    .more-options > summary { font-size:.72rem; }
+    .create-preview-panel { display:none; }
+    .create-actions { position:fixed; z-index:220; right:clamp(24px,10vw,36px); bottom:calc(12px + env(safe-area-inset-bottom)); left:clamp(24px,10vw,36px); display:grid; gap:8px; margin:0; border:0; background:linear-gradient(180deg,rgba(8,8,8,0),#080808 22%); padding:14px 0 0; }
+    .create-actions button { width:100%; min-height:38px; border-radius:999px; font-size:.78rem !important; }
+    .create-session-view .sidebar { display:none; }
+    body.create-session-view .page-container { padding:14px clamp(24px,10vw,36px) calc(122px + env(safe-area-inset-bottom)) !important; }
+}
+{% endblock %}
+{% block content %}
+<div class="create-layout">
+  <section class="create-form-panel">
+    <header class="create-heading">
+      <h1>Create session</h1>
+    </header>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="create-fields">
+        <div class="field field-title">
+          <label for="{{ form.title.id_for_label }}">Session title</label>
+          {{ form.title }}
+          {{ form.title.errors }}
+        </div>
+        <div class="field field-category">
+          <label for="{{ form.category.id_for_label }}">Category</label>
+          {{ form.category }}
+          {{ form.category.errors }}
+        </div>
+        <div class="field field-scheduled_at">
+          <label for="{{ form.scheduled_at.id_for_label }}">Date and time</label>
+          {{ form.scheduled_at }}
+          {{ form.scheduled_at.errors }}
+        </div>
+        <details class="description-details" id="description-details" open {% if form.description.errors %}data-has-errors="true"{% endif %}>
+          <summary>Description</summary>
+          <div class="description-fields">
+            <div class="field field-description">
+              <label for="{{ form.description.id_for_label }}">Description</label>
+              {{ form.description }}
+              {{ form.description.errors }}
+            </div>
+          </div>
+        </details>
+        <div class="field field-visibility">
+          <span class="field-label">Visibility</span>
+          <div class="visibility-options" role="radiogroup" aria-label="Session visibility">
+            {% for value,label in form.visibility.field.choices %}
+            <label class="visibility-option">
+              <input type="radio" name="{{ form.visibility.html_name }}" value="{{ value }}" {% if form.visibility.value == value %}checked{% endif %} required>
+              <span>{{ label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          {{ form.visibility.errors }}
+        </div>
+      </div>
+      <div class="non-field-errors">{{ form.non_field_errors }}</div>
+      <div class="create-actions">
+        <button class="go" type="submit" name="action" value="start">Go live now</button>
+        <button class="draft" type="submit" name="action" value="schedule">Schedule</button>
+      </div>
+      <details class="more-options" id="more-options" {% if form.participant_limit.errors or form.thumbnail.errors or form.recording_consent.errors %}open data-has-errors="true"{% endif %}>
+        <summary>More options</summary>
+        <div class="more-options-fields">
+          <div class="field field-participant_limit">
+            <label for="{{ form.participant_limit.id_for_label }}">{{ form.participant_limit.label }}</label>
+            {{ form.participant_limit }}
+            {{ form.participant_limit.errors }}
+          </div>
+          <div class="field field-thumbnail">
+            <label for="{{ form.thumbnail.id_for_label }}">{{ form.thumbnail.label }}</label>
+            {{ form.thumbnail }}
+            {{ form.thumbnail.errors }}
+          </div>
+          <div class="recording-consent">
+            {{ form.recording_consent }}
+            <div>
+              <label for="{{ form.recording_consent.id_for_label }}">I agree that this live session will be recorded and saved as a replay. Required to go live now.</label>
+              {{ form.recording_consent.errors }}
+              <p class="consent-message" id="consent-message">Agree to the recording notice before going live.</p>
+            </div>
+          </div>
+        </div>
+      </details>
+    </form>
+  </section>
+  <aside class="create-preview-panel">
+    <div class="preview-heading">Preview</div>
+    <button class="preview-card" type="button" id="session-preview-card" aria-label="Choose a session thumbnail">
+      <img id="session-preview-image" alt="" hidden>
+      <div class="preview-overlay">
+        <span class="preview-status">LIVE</span>
+        <strong id="session-preview-title">Green Room Live</strong>
+      </div>
+    </button>
+  </aside>
+</div>
+<script>
+(() => {
+  const title = document.getElementById("id_title");
+  const preview = document.getElementById("session-preview-title");
+  const thumbnail = document.getElementById("id_thumbnail");
+  const previewImage = document.getElementById("session-preview-image");
+  const options = document.getElementById("more-options");
+  const descriptionOptions = document.getElementById("description-details");
+  const consent = document.getElementById("id_recording_consent");
+  const consentMessage = document.getElementById("consent-message");
+  const formElement = document.querySelector(".create-form-panel form");
+  if (options && window.matchMedia("(max-width: 760px)").matches && !options.dataset.hasErrors) {
+    options.open = false;
+  }
+  if (descriptionOptions && window.matchMedia("(max-width: 760px)").matches && !descriptionOptions.dataset.hasErrors) {
+    descriptionOptions.open = false;
+  }
+  if (title && preview) {
+    const updateTitle = () => { preview.textContent = title.value.trim() || "Green Room Live"; };
+    title.addEventListener("input", updateTitle);
+    updateTitle();
+  }
+  if (thumbnail && previewImage) {
+    let previewObjectUrl = "";
+    thumbnail.addEventListener("change", () => {
+      if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+      const file = thumbnail.files && thumbnail.files[0];
+      if (!file) {
+        previewImage.removeAttribute("src");
+        previewImage.hidden = true;
+        previewObjectUrl = "";
+        return;
+      }
+      previewObjectUrl = URL.createObjectURL(file);
+      previewImage.src = previewObjectUrl;
+      previewImage.hidden = false;
+    });
+  }
+  const previewCard = document.getElementById("session-preview-card");
+  if (previewCard && thumbnail && options) {
+    previewCard.addEventListener("click", () => {
+      options.open = true;
+      thumbnail.click();
+    });
+  }
+  if (formElement && options && consent && consentMessage) {
+    formElement.addEventListener("submit", event => {
+      if (event.submitter && event.submitter.value === "start" && !consent.checked) {
+        event.preventDefault();
+        options.open = true;
+        consentMessage.style.display = "block";
+        consent.focus();
+      }
+    });
+    consent.addEventListener("change", () => { consentMessage.style.display = "none"; });
+  }
+})();
+</script>
+{% endblock %}

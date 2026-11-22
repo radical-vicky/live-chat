@@ -1,0 +1,44 @@
+{% extends "base_app.html" %}
+{% block title %}{{ video.title }} — RADEV LIVE{% endblock %}
+{% block body_class %}video-detail-view{% endblock %}
+{% block extra_css %}
+.video-detail-page{width:100%;max-width:1050px;margin:0 auto}
+.video-player{width:100%;max-height:70vh;aspect-ratio:16/9;border-radius:12px;background:#000}
+.video-detail-info{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-top:.9rem}
+.video-detail-title{font-size:1.15rem}
+.video-detail-views{margin-top:.3rem;color:#aaa;font-size:.72rem}
+.video-detail-creator{display:inline-flex;align-items:center;gap:.5rem;margin-top:.55rem;color:#aaa;font-size:.75rem}
+.video-detail-creator img{width:30px;height:30px;object-fit:cover;border-radius:50%}
+.video-detail-description{margin-top:.8rem;color:#bbb;font-size:.82rem;white-space:pre-line}
+.video-delete-button{border:1px solid #733333;border-radius:999px;background:#241515;color:#ffb4b4;padding:.5rem .75rem;font-size:.7rem}
+@media(max-width:600px){.video-player{border-radius:8px}.video-detail-info{flex-direction:column}.video-detail-title{font-size:.9rem}}
+{% endblock %}
+{% block content %}
+<main class="video-detail-page">
+  <video class="video-player" controls preload="metadata" playsinline poster="{{ video.thumbnail_url }}">
+    <source src="{{ video.video_url }}" type="{% if video.format == 'webm' %}video/webm{% else %}video/mp4{% endif %}">
+    Your browser does not support video playback.
+  </video>
+  <section class="video-detail-info">
+    <div>
+      <h1 class="video-detail-title">{{ video.title }}</h1>
+      <p class="video-detail-views">{{ video.view_count }} views</p>
+      {% if video.owner.profile.username %}
+        <a class="video-detail-creator" href="{% url 'user_profile' video.owner.profile.username %}">
+          {% if video.owner.profile.avatar %}<img src="{{ video.owner.profile.avatar.url }}" alt="">{% endif %}
+          {{ video.owner.profile.full_name|default:video.owner.get_username }}
+        </a>
+      {% else %}
+        <span class="video-detail-creator">{{ video.owner.get_username }}</span>
+      {% endif %}
+      {% if video.description %}<p class="video-detail-description">{{ video.description }}</p>{% endif %}
+    </div>
+    {% if user == video.owner %}
+    <form method="post" action="{% url 'delete_video' video.pk %}" onsubmit="return confirm('Delete this video? This cannot be undone.');">
+      {% csrf_token %}
+      <button class="video-delete-button" type="submit">Delete video</button>
+    </form>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

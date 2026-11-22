@@ -1,0 +1,119 @@
+{% extends "base_app.html" %}
+{% block title %}{{ session.title }} — RADEV LIVE{% endblock %}
+{% block body_class %}session-detail-view{% endblock %}
+{% block extra_css %}
+.hero-session{min-height:180px;border-radius:9px;padding:1.25rem;background:linear-gradient(135deg,#9a501f,#101126);display:flex;flex-direction:column;justify-content:flex-end;background-size:cover;background-position:center}.hero-session .meta{font-size:.62rem;color:#ddd}.hero-session h1{font-size:1.3rem;margin:.35rem 0}.detail-actions{display:flex;gap:.45rem;align-items:center;flex-wrap:wrap}.join-live,.action-button{border:0;border-radius:999px;background:#e27918;color:white;padding:.5rem .85rem;font-size:.68rem;width:max-content;cursor:pointer}.action-button.secondary{background:#202039;color:white}.detail-bottom{display:grid;grid-template-columns:1.4fr 1fr;gap:.8rem;margin-top:.8rem}.panel{background:#17182b;border-radius:8px;padding:.75rem;font-size:.68rem}.speakers{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.55rem}.speaker{display:flex;max-width:65px;flex-direction:column;align-items:center;gap:.25rem;color:#fff;text-align:center;text-decoration:none;font-size:.55rem;overflow-wrap:anywhere}.speaker-avatar{display:grid;width:44px;height:44px;flex:0 0 44px;place-items:center;overflow:hidden;border-radius:50%;background:linear-gradient(135deg,#1749a1,#090915);font-size:.85rem;font-weight:700}.speaker-avatar img{width:100%;height:100%;object-fit:cover}.speaker:hover .speaker-avatar,.speaker:focus-visible .speaker-avatar{outline:2px solid #ff7900;outline-offset:2px}.more-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:.55rem;margin-top:.55rem}.mini{height:95px;border-radius:6px;background:linear-gradient(135deg,#1749a1,#090915);padding:.35rem;display:flex;align-items:flex-end;font-size:.55rem}.mini:nth-child(3n){background:linear-gradient(135deg,#8f1d2e,#090915)}@media(max-width:760px){
+  .hero-session{min-height:145px;border-radius:8px;padding:12px;background-color:#78300b}
+  .hero-session .meta{font-size:.53rem;line-height:1.35}
+  .hero-session h1{font-size:.94rem;margin:5px 0}
+  .detail-actions{gap:5px}
+  .join-live,.action-button{padding:7px 10px;font-size:.57rem}
+  .detail-bottom{grid-template-columns:1fr;gap:7px;margin-top:8px}
+  .panel{border:1px solid #222;border-radius:7px;background:#151515;padding:9px;font-size:.61rem}
+  .speakers{gap:10px}
+  .speaker{font-size:.51rem}
+  .speaker-avatar{width:35px;height:35px;flex-basis:35px;font-size:.7rem}
+  .more-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px}
+  .mini{height:65px;padding:5px;font-size:.5rem}
+  .related-heading{font-size:.7rem!important;margin-top:10px!important}
+}
+.recording-agreement{display:block;max-width:260px;margin:.35rem 0;color:#ddd;font-size:.62rem}.recording-agreement input{width:auto}.preview-section{margin-top:1rem;padding:1rem;border:1px solid #25263b;border-radius:9px;background:#121212}.preview-section h2{font-size:.9rem;margin-bottom:.65rem}.preview-video{display:block;width:100%;max-height:70vh;border-radius:8px;background:#000}.preview-actions{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;margin:.75rem 0}.preview-actions form,.preview-owner-actions form{margin:0}.preview-status{color:#bbb;font-size:.75rem}.preview-owner-actions{display:flex;gap:.5rem;margin-top:.75rem}.preview-owner-actions a,.preview-owner-actions button{border:0;border-radius:999px;background:#272727;color:#fff;padding:.5rem .8rem;font-size:.68rem;cursor:pointer}.preview-owner-actions button{background:#a52323}.preview-comments{display:grid;gap:.6rem;margin-top:.8rem}.preview-comment{padding:.65rem;border-radius:7px;background:#1a1a1a;font-size:.72rem;overflow-wrap:anywhere}.preview-comment small{display:block;color:#aaa;margin-bottom:.25rem}.preview-comment-form textarea{width:100%;margin:.5rem 0;padding:.65rem;border:1px solid #333;border-radius:7px;background:#090909;color:#fff;font:inherit}.preview-comment-form button{border:0;border-radius:999px;background:#e27918;padding:.5rem .85rem;color:white;font-size:.68rem}
+@media(max-width:760px){.recording-agreement{font-size:.52rem}.preview-section{margin-top:8px;padding:9px}.preview-section h2{font-size:.72rem}.preview-status{font-size:.58rem}.preview-actions{gap:5px;margin:8px 0}.preview-owner-actions{gap:5px}.preview-owner-actions a,.preview-owner-actions button{padding:7px 9px;font-size:.55rem}.preview-comment{padding:7px;font-size:.57rem}.preview-comment small{font-size:.49rem}.preview-comment-form textarea{padding:8px;font-size:.57rem}.preview-comment-form button{padding:7px 10px;font-size:.55rem}}
+{% endblock %}
+{% block content %}
+<div class="hero-session"{% if session.thumbnail %} style="background-image:linear-gradient(0deg,rgba(0,0,0,.8),rgba(0,0,0,.1)),url('{{ session.thumbnail.url }}')"{% endif %}>
+  <div class="meta">{{ session.get_status_display|upper }} · {{ session.get_category_display }} · {{ session.get_visibility_display }} · {{ session.active_participant_count }} / {{ session.participant_limit }} participants</div>
+  <h1>{{ session.title }}</h1>
+  <div class="detail-actions">
+  {% if session.status == "live" %}
+    {% if request.user == session.host or session.preview_status == "recording" %}
+      <a class="join-live" href="{% url 'join_session' session.room_name %}">Join now</a>
+    {% else %}
+      <span class="action-button secondary">Host is preparing the recorded room</span>
+    {% endif %}
+  {% elif request.user == session.host and session.status == "scheduled" %}
+    <form method="post" action="{% url 'start_session' session.room_name %}">{% csrf_token %}<label class="recording-agreement"><input type="checkbox" name="recording_consent" required> I agree this session will be recorded and saved as a replay.</label><button class="join-live" type="submit">Start live</button></form>
+  {% endif %}
+  {% if session.visibility == "public" %}
+    {% if session.status == "live" or session.status == "scheduled" %}
+      <form method="post" action="{% url 'toggle_favorite' session.room_name %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'session_detail' session.room_name %}"><button class="action-button secondary" type="submit">{% if is_favorite %}Remove from favorites{% else %}Save session{% endif %}</button></form>
+    {% endif %}
+  {% endif %}
+  {% if request.user != session.host %}<a class="action-button secondary" href="{% url 'messages' %}?with={{ session.host_id }}">Message host</a>{% endif %}
+  </div>
+</div>
+<div class="detail-bottom">
+  <div class="panel"><strong>About</strong><p style="color:#aaaab7;margin-top:.35rem">{{ session.description|default:"No description provided." }}</p><p style="margin-top:.55rem;color:#aaaab7">Hosted by <a href="{% url 'user_profile' session.host.profile.username %}">{{ session.host.profile.full_name|default:session.host.get_username }}</a></p>{% if request.user != session.host %}<form method="post" action="{% url 'toggle_follow' session.host_id %}" style="margin-top:.5rem">{% csrf_token %}<input type="hidden" name="next" value="{% url 'session_detail' session.room_name %}"><button class="action-button secondary" type="submit">{% if is_following %}Unfollow host{% else %}Follow host{% endif %}</button></form>{% endif %}</div>
+  <div class="panel"><strong>Participants</strong><div class="speakers">{% for participant in participants %}{% with participant_name=participant.user.profile.full_name|default:participant.user.get_username %}<a class="speaker" href="{% url 'user_profile' participant.user.profile.username %}" aria-label="View {{ participant_name }}'s profile"><span class="speaker-avatar">{% if participant.user.profile.avatar %}<img src="{{ participant.user.profile.avatar.url }}" alt="">{% else %}{{ participant_name|first|upper }}{% endif %}</span><span>{{ participant_name }}</span></a>{% endwith %}{% empty %}<span style="color:#aaaab7">No participants yet.</span>{% endfor %}</div></div>
+</div>
+{% if session.status == "ended" %}
+<section class="preview-section">
+  <h2>Session preview</h2>
+  {% if session.preview_status == "ready" %}
+    {% if preview_url %}
+      <video class="preview-video" controls playsinline preload="metadata" src="{{ preview_url }}">Your browser does not support video playback.</video>
+    {% else %}
+      <p class="preview-status">The replay is temporarily unavailable.</p>
+    {% endif %}
+    {% if session.visibility == "public" %}
+    <div class="preview-actions">
+      <form method="post" action="{% url 'toggle_preview_like' session.room_name %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'session_detail' session.room_name %}"><button class="action-button secondary" type="submit">{% if is_preview_liked %}Unlike{% else %}Like{% endif %} · {{ preview_likes_count }}</button></form>
+      <form method="post" action="{% url 'toggle_favorite' session.room_name %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'session_detail' session.room_name %}"><button class="action-button secondary" type="submit">{% if is_favorite %}Remove from favorites{% else %}Save to favorites{% endif %}</button></form>
+    </div>
+    {% endif %}
+    {% if request.user == session.host %}
+    <div class="preview-owner-actions">
+      <a href="{% url 'edit_preview' session.room_name %}">Edit preview details</a>
+      <form method="post" action="{% url 'delete_preview' session.room_name %}" onsubmit="return confirm('Delete this replay preview?')">{% csrf_token %}<button type="submit">Delete preview</button></form>
+    </div>
+    {% endif %}
+    {% if session.visibility == "public" %}
+    <h3 style="font-size:.78rem;margin-top:1rem">Comments</h3>
+    <form class="preview-comment-form" method="post" action="{% url 'add_preview_comment' session.room_name %}">
+      {% csrf_token %}<input type="hidden" name="next" value="{% url 'session_detail' session.room_name %}">
+      {{ preview_comment_form.text }}{{ preview_comment_form.text.errors }}
+      <button type="submit">Comment</button>
+    </form>
+    <div class="preview-comments">
+      {% for comment in preview_comments %}<article class="preview-comment"><small>{{ comment.user.profile.full_name|default:comment.user.get_username }} · {{ comment.created_at|date:"M j, Y H:i" }}</small>{{ comment.text }}</article>{% empty %}<p class="text-muted">Be the first to comment.</p>{% endfor %}
+    </div>
+    {% endif %}
+  {% elif session.preview_status == "processing" %}
+    <p class="preview-status" id="preview-processing-status">Your replay is processing. This page will update when it is ready.</p>
+    <script>
+      (() => {
+        const statusUrl = "{% url 'preview_recording_status' session.room_name %}";
+        const statusText = document.getElementById("preview-processing-status");
+        const poll = async () => {
+          try {
+            const response = await fetch(statusUrl, {credentials: "same-origin"});
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Could not check the replay status.");
+            if (result.status === "ready") {
+              window.location.reload();
+              return;
+            }
+            if (result.status === "failed") {
+              statusText.textContent = "The replay could not be saved.";
+              return;
+            }
+          } catch (error) {
+            statusText.textContent = error.message;
+          }
+          window.setTimeout(poll, 5000);
+        };
+        window.setTimeout(poll, 5000);
+      })();
+    </script>
+  {% elif request.user == session.host and session.preview_status == "failed" %}
+    <p class="preview-status">The replay could not be saved.</p>
+  {% elif request.user == session.host and session.preview_status == "deleted" %}
+    <p class="preview-status">You deleted this replay preview.</p>
+  {% else %}
+    <p class="preview-status">No replay preview is available yet.</p>
+  {% endif %}
+</section>
+{% endif %}
+<h2 class="related-heading" style="font-size:.75rem;margin-top:.9rem">More in {{ session.get_category_display }}</h2>
+<div class="more-grid">{% for related in more_sessions %}<a class="mini" href="{% url 'session_detail' related.room_name %}">{{ related.title }}</a>{% empty %}<p class="text-muted">No related sessions yet.</p>{% endfor %}</div>
+{% endblock %}
