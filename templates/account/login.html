@@ -3,6 +3,44 @@
 {% block title %}Log in — RADEV LIVE{% endblock %}
 
 {% block auth_content %}
+    <style>
+        /* Forces the underline to be removed on all links in this form */
+        .auth-mobile-switch, 
+        .auth-mobile-switch:hover, 
+        .forgot-password-link, 
+        .forgot-password-link:hover {
+            text-decoration: none !important;
+        }
+        
+        /* Makes the mobile Register button look like a proper button */
+        .auth-mobile-switch {
+            display: block;
+            text-align: center;
+            width: 100%;
+            padding: 0.85rem 1.5rem;
+            margin-top: 0.75rem;
+            border-radius: 999px;
+            background-color: #27272A; /* Dark grey background */
+            color: white;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border: 1px solid #3f3f46;
+            transition: background 0.2s;
+        }
+        
+        .auth-mobile-switch:hover {
+            background-color: #3f3f46;
+        }
+
+        /* Adds a little spacing for the forgot password link */
+        .forgot-password-container {
+            text-align: center;
+            font-size: .8rem;
+            color: #A1A1AA;
+            margin-top: 1rem;
+        }
+    </style>
+
     <form method="POST" action="{% url 'account_login' %}">
         {% csrf_token %}
         <p style="margin-bottom: 1.15rem; color: #A1A1AA; font-size: .85rem;">Log in to start or join live sessions.</p>
@@ -30,9 +68,13 @@
         {% endif %}
 
         <button type="submit" class="btn-submit">Log in</button>
+        
+        <!-- Added class to remove underline -->
         <a href="{% url 'account_signup' %}" class="auth-mobile-switch">Register</a>
-        <p style="text-align:center;font-size:.8rem;color:#A1A1AA">
-            <a href="{% url 'account_reset_password' %}" style="color:#F97316">Forgot your password?</a>
+        
+        <p class="forgot-password-container">
+            <!-- Added class to remove underline -->
+            <a href="{% url 'account_reset_password' %}" class="forgot-password-link" style="color:#F97316">Forgot your password?</a>
         </p>
     </form>
 {% endblock %}
