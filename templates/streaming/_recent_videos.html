@@ -1,0 +1,31 @@
+<section class="recent-video-section" aria-labelledby="recent-video-heading">
+  <header class="recent-video-header">
+    <h2 id="recent-video-heading">Latest videos</h2>
+    <a href="{% url 'video_library' %}">Browse all videos</a>
+  </header>
+  {% if videos %}
+  <div class="recent-video-grid">
+    {% for video in videos %}
+    <article class="recent-video-card">
+      <a class="recent-video-thumb" href="{% url 'video_detail' video.pk %}" aria-label="Watch {{ video.title }}">
+        <img src="{{ video.thumbnail_url }}" alt="" {% if forloop.first %}loading="eager" fetchpriority="high"{% else %}loading="lazy"{% endif %} decoding="async">
+        <span>{{ video.view_count }} views</span>
+      </a>
+      <a class="recent-video-title" href="{% url 'video_detail' video.pk %}">{{ video.title }}</a>
+      {% if video.owner.profile.username %}
+      <a class="recent-video-creator" href="{% url 'user_profile' video.owner.profile.username %}">
+        {{ video.owner.profile.full_name|default:video.owner.get_username }}
+      </a>
+      {% else %}
+      <span class="recent-video-creator">{{ video.owner.get_username }}</span>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="recent-video-empty">
+    No videos have been uploaded yet.
+    {% if user.is_authenticated %}<a href="{% url 'video_upload' %}">Upload the first video</a>{% endif %}
+  </p>
+  {% endif %}
+</section>

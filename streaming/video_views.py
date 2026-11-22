@@ -179,7 +179,7 @@ def video_upload(request):
                             resource_type="video",
                             format="jpg",
                             transformation=[{
-                                "start_offset": 0,
+                                "start_offset": 0.5,
                                 "width": 640,
                                 "height": 360,
                                 "crop": "fill",

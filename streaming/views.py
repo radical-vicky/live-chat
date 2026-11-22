@@ -32,6 +32,7 @@ from .models import (
     PreviewLike,
     SessionParticipant,
     SessionReminder,
+    UploadedVideo,
 )
 from .services import (
     PreviewRecordingError,
@@ -555,6 +556,17 @@ def explore_sessions(request):
         )
         sessions = sessions.filter(search_filter)
         previews = previews.filter(search_filter)
+    videos = UploadedVideo.objects.select_related(
+        "owner",
+        "owner__profile",
+    )
+    if query:
+        videos = videos.filter(
+            Q(title__icontains=query)
+            | Q(description__icontains=query)
+            | Q(owner__profile__full_name__icontains=query)
+            | Q(owner__profile__username__icontains=query)
+        )
 
     return render(
         request,
@@ -562,6 +574,7 @@ def explore_sessions(request):
         {
             "sessions": sessions,
             "previews": previews.order_by("-ended_at")[:6],
+            "videos": videos.order_by("-created_at")[:6],
             "query": query,
             "category": category,
             "categories": LiveSession.CATEGORY_CHOICES,

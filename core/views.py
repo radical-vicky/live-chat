@@ -9,7 +9,7 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from streaming.models import LiveSession
+from streaming.models import LiveSession, UploadedVideo
 from streaming.services import (
     PreviewRecordingError,
     delete_preview_recording,
@@ -41,10 +41,15 @@ def home(request):
     live_count = LiveSession.objects.filter(status="live").count()
     total_hosts = User.objects.filter(profile__is_host=True).count()
     total_sessions = LiveSession.objects.filter(status="ended").count()
+    videos = UploadedVideo.objects.select_related(
+        "owner",
+        "owner__profile",
+    ).order_by("-created_at")[:6]
 
     return render(request, "core/index.html", {
         "live_sessions": live_sessions,
         "upcoming_sessions": upcoming_sessions,
+        "videos": videos,
         "live_count": live_count,
         "total_hosts": total_hosts,
         "total_sessions": total_sessions,
@@ -67,6 +72,10 @@ def dashboard(request):
         visibility="public",
         status="live",
     ).select_related("host").order_by("-started_at")[:3]
+    videos = UploadedVideo.objects.select_related(
+        "owner",
+        "owner__profile",
+    ).order_by("-created_at")[:6]
 
     return render(request, "core/dashboard.html", {
         "my_live": my_live,
@@ -74,6 +83,7 @@ def dashboard(request):
         "my_ended": my_ended,
         "trending": trending,
         "live_now": live_now,
+        "videos": videos,
     })
 
 def about(request):

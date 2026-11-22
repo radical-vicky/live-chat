@@ -82,6 +82,27 @@ class LiveSessionWorkflowTests(TestCase):
         self.assertContains(response, 'class="session-thumbnail"')
         self.assertContains(response, "/media/stream_thumbnails/preview.jpg")
 
+    def test_explore_lists_matching_uploaded_videos(self):
+        video = UploadedVideo.objects.create(
+            owner=self.user,
+            title="Python video tutorial",
+            cloudinary_public_id=f"radevlive/videos/user_{self.user.pk}/{uuid.uuid4().hex}",
+            video_url="https://res.cloudinary.com/demo/video/upload/tutorial.mp4",
+            thumbnail_url="https://res.cloudinary.com/demo/video/upload/tutorial.jpg",
+            format="mp4",
+            size_bytes=1024,
+        )
+
+        response = self.client.get(reverse("explore_sessions"), {"q": "Python"})
+
+        self.assertContains(response, video.title)
+        self.assertContains(response, f'<img src="{video.thumbnail_url}"')
+        self.assertContains(
+            response,
+            reverse("video_detail", args=[video.pk]),
+        )
+        self.assertEqual(list(response.context["videos"]), [video])
+
     def test_dashboard_live_now_cards_use_uploaded_thumbnail(self):
         self.session.status = "live"
         self.session.thumbnail = "stream_thumbnails/live.jpg"
@@ -91,6 +112,42 @@ class LiveSessionWorkflowTests(TestCase):
 
         self.assertContains(response, 'class="live-now-thumbnail"')
         self.assertContains(response, "/media/stream_thumbnails/live.jpg")
+
+    def test_dashboard_lists_recent_uploaded_videos(self):
+        video = UploadedVideo.objects.create(
+            owner=self.user,
+            title="Dashboard video",
+            cloudinary_public_id=f"radevlive/videos/user_{self.user.pk}/{uuid.uuid4().hex}",
+            video_url="https://res.cloudinary.com/demo/video/upload/dashboard.mp4",
+            thumbnail_url="https://res.cloudinary.com/demo/video/upload/dashboard.jpg",
+            format="mp4",
+            size_bytes=1024,
+        )
+
+        response = self.client.get(reverse("core:dashboard"))
+
+        self.assertContains(response, video.title)
+        self.assertContains(response, f'<img src="{video.thumbnail_url}"')
+        self.assertContains(response, reverse("video_detail", args=[video.pk]))
+        self.assertEqual(list(response.context["videos"]), [video])
+
+    def test_public_home_lists_recent_uploaded_videos(self):
+        video = UploadedVideo.objects.create(
+            owner=self.user,
+            title="Home page video",
+            cloudinary_public_id=f"radevlive/videos/user_{self.user.pk}/{uuid.uuid4().hex}",
+            video_url="https://res.cloudinary.com/demo/video/upload/home.mp4",
+            thumbnail_url="https://res.cloudinary.com/demo/video/upload/home.jpg",
+            format="mp4",
+            size_bytes=1024,
+        )
+
+        response = self.client.get(reverse("core:home"))
+
+        self.assertContains(response, video.title)
+        self.assertContains(response, f'<img src="{video.thumbnail_url}"')
+        self.assertContains(response, reverse("video_detail", args=[video.pk]))
+        self.assertEqual(list(response.context["videos"]), [video])
 
     def test_favorite_and_reminder_actions_persist_and_toggle(self):
         favorite_url = reverse(
@@ -819,6 +876,7 @@ class VideoUploadWorkflowTests(TestCase):
         self.assertEqual(video.size_bytes, 1024)
         self.assertEqual(video.duration_seconds, 12.5)
         self.assertEqual(video.format, "mp4")
+        self.assertIn(",so_0.5,", video.thumbnail_url)
         self.assertIn("res.cloudinary.com/demo/video/upload", video.thumbnail_url)
 
     @override_settings(

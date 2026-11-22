@@ -146,6 +146,26 @@
     padding: 1.5rem;
 }
 
+.landing-videos {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1.5rem 2rem;
+}
+.landing-videos .recent-video-section { min-width: 0; }
+.landing-videos .recent-video-header { display:flex; align-items:center; justify-content:space-between; gap:.75rem; margin-bottom:.75rem; }
+.landing-videos .recent-video-header h2 { font-size:1rem; }
+.landing-videos .recent-video-header a { color:#F97316; font-size:.75rem; font-weight:600; }
+.landing-videos .recent-video-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; }
+.landing-videos .recent-video-empty { border:1px dashed #303030; border-radius:8px; padding:.8rem; color:#A1A1AA; font-size:.72rem; }
+.landing-videos .recent-video-empty a { color:#F97316; font-weight:600; }
+.landing-videos .recent-video-card { min-width:0; }
+.landing-videos .recent-video-thumb { position:relative; display:block; aspect-ratio:16/9; overflow:hidden; border:1px solid #27272A; background:#080808; }
+.landing-videos .recent-video-thumb img { width:100%; height:100%; object-fit:cover; }
+.landing-videos .recent-video-thumb span { position:absolute; right:.4rem; bottom:.3rem; color:#fff; font-size:.65rem; font-weight:700; text-shadow:0 1px 5px #000; }
+.landing-videos .recent-video-title { display:block; overflow:hidden; margin-top:.4rem; font-size:.72rem; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
+.landing-videos .recent-video-creator { display:block; overflow:hidden; margin-top:.2rem; color:#A1A1AA; font-size:.62rem; text-overflow:ellipsis; white-space:nowrap; }
+
 .feature-card {
     background-color: #121214;
     border: 1px solid #27272A;
@@ -271,6 +291,13 @@
     }
     
     .feature-card:not(:first-child) { display: block; }
+    .landing-videos { padding: 0 4rem 3rem; }
+}
+@media (max-width: 760px) {
+    .landing-videos .recent-video-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:.7rem; }
+    .landing-videos .recent-video-header h2 { font-size:.82rem; }
+    .landing-videos .recent-video-header a { font-size:.65rem; }
+    .landing-videos .recent-video-title { font-size:.65rem; }
 }
 {% endblock %}
 
@@ -331,6 +358,10 @@
         </div>
 
     </main>
+
+    <div class="landing-videos">
+        {% include "streaming/_recent_videos.html" %}
+    </div>
 
     <!-- Bottom Features Row -->
     <div class="features-row" id="features">

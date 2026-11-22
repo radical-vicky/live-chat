@@ -231,6 +231,8 @@
     {% empty %}<p class="text-muted">No public sessions yet. Create one or explore again later.</p>{% endfor %}
 </div>
 
+{% include "streaming/_recent_videos.html" %}
+
 <!-- Upcoming Lives -->
 <div class="section-header"><h2>Your upcoming sessions</h2><a href="{% url 'upcoming_sessions' %}">Browse schedule</a></div>
 <div class="session-grid">
