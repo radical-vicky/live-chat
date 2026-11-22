@@ -2,14 +2,40 @@
 {% block title %}{{ session.title }} — RADEV LIVE{% endblock %}
 {% block body_class %}session-detail-view{% endblock %}
 {% block extra_css %}
-.hero-session{min-height:180px;border-radius:9px;padding:1.25rem;background:linear-gradient(135deg,#9a501f,#101126);display:flex;flex-direction:column;justify-content:flex-end;background-size:cover;background-position:center}.hero-session .meta{font-size:.62rem;color:#ddd}.hero-session h1{font-size:1.3rem;margin:.35rem 0}.detail-actions{display:flex;gap:.45rem;align-items:center;flex-wrap:wrap}.join-live,.action-button{border:0;border-radius:999px;background:#e27918;color:white;padding:.5rem .85rem;font-size:.68rem;width:max-content;cursor:pointer}.action-button.secondary{background:#202039;color:white}.detail-bottom{display:grid;grid-template-columns:1.4fr 1fr;gap:.8rem;margin-top:.8rem}.panel{background:#17182b;border-radius:8px;padding:.75rem;font-size:.68rem}.speakers{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.55rem}.speaker{display:flex;max-width:65px;flex-direction:column;align-items:center;gap:.25rem;color:#fff;text-align:center;text-decoration:none;font-size:.55rem;overflow-wrap:anywhere}.speaker-avatar{display:grid;width:44px;height:44px;flex:0 0 44px;place-items:center;overflow:hidden;border-radius:50%;background:linear-gradient(135deg,#1749a1,#090915);font-size:.85rem;font-weight:700}.speaker-avatar img{width:100%;height:100%;object-fit:cover}.speaker:hover .speaker-avatar,.speaker:focus-visible .speaker-avatar{outline:2px solid #ff7900;outline-offset:2px}.more-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:.55rem;margin-top:.55rem}.mini{height:95px;border-radius:6px;background:linear-gradient(135deg,#1749a1,#090915);padding:.35rem;display:flex;align-items:flex-end;font-size:.55rem}.mini:nth-child(3n){background:linear-gradient(135deg,#8f1d2e,#090915)}@media(max-width:760px){
-  .hero-session{min-height:145px;border-radius:8px;padding:12px;background-color:#78300b}
+/* Changed to keep the layout identical but show the full image without cropping */
+.hero-session{display:grid;grid-template-columns:minmax(120px,38%) minmax(0,1fr);overflow:hidden;border:1px solid #292929;border-radius:12px;background:#101010}
+.hero-session-media{display:grid;min-height:260px;place-items:center;overflow:hidden;background:#050505}
+.hero-session-image{display:block;width:100%;height:auto;object-fit:contain}
+.hero-session-content{display:flex;flex-direction:column;justify-content:flex-start;padding:1rem 1.25rem 1.15rem;background:linear-gradient(180deg,#171717,#101010)}
+.hero-session-no-image .hero-session-content{grid-column:1/-1}
+.hero-session .meta{font-size:.62rem;color:#ccc}
+.hero-session h1{font-size:1.3rem;margin:.35rem 0}
+.detail-actions{display:flex;gap:.45rem;align-items:center;flex-wrap:wrap}
+.join-live,.action-button{border:0;border-radius:999px;background:#e27918;color:white;padding:.5rem .85rem;font-size:.68rem;width:max-content;cursor:pointer}
+.action-button.secondary{background:#202039;color:white}
+.session-extra-details{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:.65rem;margin-top:.85rem}
+.session-detail-panel{min-width:0;border:1px solid #292929;border-radius:8px;background:#111;padding:.7rem;font-size:.68rem}
+.session-detail-panel h2{margin-bottom:.35rem;font-size:.72rem}
+.session-description{color:#aaaab7;overflow-wrap:anywhere;white-space:pre-line}
+.session-host{margin-top:.55rem;color:#aaaab7}
+.participant-count{margin-left:.25rem;color:#aaaab7;font-size:.62rem;font-weight:400}
+.speakers{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.55rem}
+.speaker{display:flex;max-width:65px;flex-direction:column;align-items:center;gap:.25rem;color:#fff;text-align:center;text-decoration:none;font-size:.55rem;overflow-wrap:anywhere}
+.speaker-avatar{display:grid;width:44px;height:44px;flex:0 0 44px;place-items:center;overflow:hidden;border-radius:50%;background:linear-gradient(135deg,#1749a1,#090915);font-size:.85rem;font-weight:700}
+.speaker-avatar img{width:100%;height:100%;object-fit:cover}
+.speaker:hover .speaker-avatar,.speaker:focus-visible .speaker-avatar{outline:2px solid #ff7900;outline-offset:2px}
+.more-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:.55rem;margin-top:.55rem}
+.mini{height:95px;border-radius:6px;background:linear-gradient(135deg,#1749a1,#090915);padding:.35rem;display:flex;align-items:flex-end;font-size:.55rem}.mini:nth-child(3n){background:linear-gradient(135deg,#8f1d2e,#090915)}
+@media(max-width:760px){
+  .hero-session{grid-template-columns:minmax(105px,38%) minmax(0,1fr);border-radius:8px}
+  .hero-session-media{min-height:180px}
+  .hero-session-content{padding:12px}
   .hero-session .meta{font-size:.53rem;line-height:1.35}
   .hero-session h1{font-size:.94rem;margin:5px 0}
   .detail-actions{gap:5px}
   .join-live,.action-button{padding:7px 10px;font-size:.57rem}
-  .detail-bottom{grid-template-columns:1fr;gap:7px;margin-top:8px}
-  .panel{border:1px solid #222;border-radius:7px;background:#151515;padding:9px;font-size:.61rem}
+  .session-extra-details{grid-template-columns:1fr;gap:7px;margin-top:8px}
+  .session-detail-panel{padding:9px;font-size:.61rem}
   .speakers{gap:10px}
   .speaker{font-size:.51rem}
   .speaker-avatar{width:35px;height:35px;flex-basis:35px;font-size:.7rem}
@@ -21,10 +47,16 @@
 @media(max-width:760px){.recording-agreement{font-size:.52rem}.preview-section{margin-top:8px;padding:9px}.preview-section h2{font-size:.72rem}.preview-status{font-size:.58rem}.preview-actions{gap:5px;margin:8px 0}.preview-owner-actions{gap:5px}.preview-owner-actions a,.preview-owner-actions button{padding:7px 9px;font-size:.55rem}.preview-comment{padding:7px;font-size:.57rem}.preview-comment small{font-size:.49rem}.preview-comment-form textarea{padding:8px;font-size:.57rem}.preview-comment-form button{padding:7px 10px;font-size:.55rem}}
 {% endblock %}
 {% block content %}
-<div class="hero-session"{% if session.thumbnail %} style="background-image:linear-gradient(0deg,rgba(0,0,0,.8),rgba(0,0,0,.1)),url('{{ session.thumbnail.url }}')"{% endif %}>
-  <div class="meta">{{ session.get_status_display|upper }} · {{ session.get_category_display }} · {{ session.get_visibility_display }} · {{ session.active_participant_count }} / {{ session.participant_limit }} participants</div>
-  <h1>{{ session.title }}</h1>
-  <div class="detail-actions">
+<section class="hero-session{% if not session.thumbnail %} hero-session-no-image{% endif %}">
+  {% if session.thumbnail %}
+  <div class="hero-session-media">
+    <img class="hero-session-image" src="{{ session.thumbnail.url }}" alt="{{ session.title }} session image">
+  </div>
+  {% endif %}
+  <div class="hero-session-content">
+    <div class="meta">{{ session.get_status_display|upper }} · {{ session.get_category_display }} · {{ session.get_visibility_display }}</div>
+    <h1>{{ session.title }}</h1>
+    <div class="detail-actions">
   {% if session.status == "live" %}
     {% if request.user == session.host or session.preview_status == "recording" %}
       <a class="join-live" href="{% url 'join_session' session.room_name %}">Join now</a>
@@ -40,12 +72,24 @@
     {% endif %}
   {% endif %}
   {% if request.user != session.host %}<a class="action-button secondary" href="{% url 'messages' %}?with={{ session.host_id }}">Message host</a>{% endif %}
+    </div>
+  <div class="session-extra-details">
+    <section class="session-detail-panel">
+      <h2>About</h2>
+      <p class="session-description">{{ session.description|default:"No description provided." }}</p>
+      <p class="session-host">Hosted by <a href="{% url 'user_profile' session.host.profile.username %}">{{ session.host.profile.full_name|default:session.host.get_username }}</a></p>
+      {% if request.user != session.host %}<form method="post" action="{% url 'toggle_follow' session.host_id %}" style="margin-top:.5rem">{% csrf_token %}<input type="hidden" name="next" value="{% url 'session_detail' session.room_name %}"><button class="action-button secondary" type="submit">{% if is_following %}Unfollow host{% else %}Follow host{% endif %}</button></form>{% endif %}
+    </section>
+    <section class="session-detail-panel">
+      <h2>Participants <span class="participant-count">{{ session.active_participant_count }} / {{ session.participant_limit }}</span></h2>
+      <div class="speakers">{% for participant in participants %}{% with participant_name=participant.user.profile.full_name|default:participant.user.get_username %}<a class="speaker" href="{% url 'user_profile' participant.user.profile.username %}" aria-label="View {{ participant_name }}'s profile"><span class="speaker-avatar">{% if participant.user.profile.avatar %}<img src="{{ participant.user.profile.avatar.url }}" alt="">{% else %}{{ participant_name|first|upper }}{% endif %}</span><span>{{ participant_name }}</span></a>{% endwith %}{% empty %}<span style="color:#aaaab7">No participants yet.</span>{% endfor %}</div>
+    </section>
   </div>
-</div>
-<div class="detail-bottom">
-  <div class="panel"><strong>About</strong><p style="color:#aaaab7;margin-top:.35rem">{{ session.description|default:"No description provided." }}</p><p style="margin-top:.55rem;color:#aaaab7">Hosted by <a href="{% url 'user_profile' session.host.profile.username %}">{{ session.host.profile.full_name|default:session.host.get_username }}</a></p>{% if request.user != session.host %}<form method="post" action="{% url 'toggle_follow' session.host_id %}" style="margin-top:.5rem">{% csrf_token %}<input type="hidden" name="next" value="{% url 'session_detail' session.room_name %}"><button class="action-button secondary" type="submit">{% if is_following %}Unfollow host{% else %}Follow host{% endif %}</button></form>{% endif %}</div>
-  <div class="panel"><strong>Participants</strong><div class="speakers">{% for participant in participants %}{% with participant_name=participant.user.profile.full_name|default:participant.user.get_username %}<a class="speaker" href="{% url 'user_profile' participant.user.profile.username %}" aria-label="View {{ participant_name }}'s profile"><span class="speaker-avatar">{% if participant.user.profile.avatar %}<img src="{{ participant.user.profile.avatar.url }}" alt="">{% else %}{{ participant_name|first|upper }}{% endif %}</span><span>{{ participant_name }}</span></a>{% endwith %}{% empty %}<span style="color:#aaaab7">No participants yet.</span>{% endfor %}</div></div>
-</div>
+  </div>
+</section>
+{% if session.status == "live" and user != session.host %}
+  {% include "streaming/_mpesa_tip_form.html" %}
+{% endif %}
 {% if session.status == "ended" %}
 <section class="preview-section">
   <h2>Session preview</h2>

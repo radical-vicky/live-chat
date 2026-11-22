@@ -34,6 +34,7 @@ from .models import (
     SessionReminder,
     UploadedVideo,
 )
+from .mpesa import tip_template_context, user_display_name
 from .services import (
     PreviewRecordingError,
     check_preview_recording_settings,
@@ -751,6 +752,10 @@ def session_detail(request, room_name):
                 session=session,
             ).select_related("user", "user__profile").order_by("-created_at")[:50],
             "preview_comment_form": PreviewCommentForm(),
+            "tip_target_type": "live_session",
+            "tip_target_id": session.pk,
+            "tip_recipient_name": user_display_name(session.host),
+            **tip_template_context(),
         },
     )
 
@@ -1032,6 +1037,10 @@ def join_session(request, room_name):
             "session": locked_session,
             "livekit_url": settings.LIVEKIT_URL,
             "is_host": is_host,
+            "tip_target_type": "live_session",
+            "tip_target_id": locked_session.pk,
+            "tip_recipient_name": user_display_name(locked_session.host),
+            **tip_template_context(),
         },
     )
 

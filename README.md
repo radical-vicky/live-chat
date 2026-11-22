@@ -41,6 +41,25 @@ Use restricted storage credentials that allow Egress to upload replay objects an
 
 `REDIS_URL` is optional for local, single-process development. Without it, Channels uses its in-memory layer. Set `REDIS_URL` to a reachable Redis instance when running multiple application workers so WebSocket events are shared across processes.
 
+## M-Pesa tips
+
+Viewers can send KES tips to video creators and live-session hosts using Daraja STK Push. The payment is collected into the platform's configured M-Pesa shortcode; creator payouts are manual and can be tracked from the Django admin. The payer's phone number is sent to Daraja for checkout but is not stored in the tip ledger.
+
+Configure these values in `.env` using your Daraja app and shortcode details:
+
+- `MPESA_ENVIRONMENT=sandbox` or `live`
+- `MPESA_CONSUMER_KEY`
+- `MPESA_CONSUMER_SECRET`
+- `MPESA_SHORTCODE`
+- `MPESA_PASSKEY`
+- `MPESA_TRANSACTION_TYPE=CustomerPayBillOnline` (or `CustomerBuyGoodsOnline` for a Till)
+- `MPESA_CALLBACK_BASE_URL` (the public HTTPS origin of this app)
+- `MPESA_CALLBACK_TOKEN` (a long random URL-safe token; never commit or share it)
+
+Daraja must be able to reach the generated callback at `/payments/mpesa/callback/<token>/`. Local development therefore needs a public HTTPS tunnel configured as the callback base URL. Callback success is checked against Daraja's STK Push Query API before a tip is recorded as paid. Do not mark a tip as paid to its creator until the manual transfer has actually been sent.
+
+Optional amount settings are `MPESA_TIP_MIN_AMOUNT` (default `10`), `MPESA_TIP_MAX_AMOUNT` (default `150000`), and comma-separated `MPESA_TIP_PRESETS` (default `50,100,500`). Amounts are whole KES. Sandbox transactions do not move real funds; switch to `live` only after Daraja has approved the production app and shortcode.
+
 ## Checks
 
 ```powershell

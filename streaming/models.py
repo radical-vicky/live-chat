@@ -132,6 +132,94 @@ class UploadedVideo(models.Model):
         return self.title
 
 
+class MpesaTip(models.Model):
+    TARGET_CHOICES = [
+        ("video", "Video"),
+        ("live_session", "Live session"),
+    ]
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("succeeded", "Succeeded"),
+        ("failed", "Failed"),
+    ]
+    PAYOUT_STATUS_CHOICES = [
+        ("not_ready", "Not ready"),
+        ("unpaid", "Unpaid"),
+        ("paid", "Paid manually"),
+    ]
+
+    public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="sent_mpesa_tips",
+        null=True,
+        blank=True,
+    )
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="received_mpesa_tips",
+        null=True,
+        blank=True,
+    )
+    recipient_name = models.CharField(max_length=150)
+    target_type = models.CharField(max_length=12, choices=TARGET_CHOICES)
+    target_id = models.PositiveBigIntegerField()
+    target_title = models.CharField(max_length=150)
+    amount = models.PositiveIntegerField()
+    currency = models.CharField(max_length=3, default="KES")
+    status = models.CharField(
+        max_length=12,
+        choices=STATUS_CHOICES,
+        default="pending",
+    )
+    payout_status = models.CharField(
+        max_length=12,
+        choices=PAYOUT_STATUS_CHOICES,
+        default="not_ready",
+    )
+    merchant_request_id = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+    )
+    checkout_request_id = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+    )
+    mpesa_receipt_number = models.CharField(
+        max_length=30,
+        unique=True,
+        null=True,
+        blank=True,
+    )
+    failure_reason = models.CharField(max_length=255, blank=True)
+    payout_reference = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    payout_paid_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status", "created_at"]),
+            models.Index(fields=["recipient", "status"]),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gte=10),
+                name="mpesa_tip_amount_minimum",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.currency} {self.amount} tip to {self.recipient_name}"
+
+
 class SessionParticipant(models.Model):
     session = models.ForeignKey(
         LiveSession,

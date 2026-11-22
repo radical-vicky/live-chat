@@ -91,6 +91,16 @@
         .setting-button:hover { background: #303030; }
         .setting-button.end { border-color: #ec2929; background: #ec2929; color: #fff; }
         .participant-error { min-height: 14px; margin: 5px 0 0; color: #ff6868; font-size: .57rem; }
+        .room-tip { border-bottom: 1px solid #222; padding: 9px; }
+        .room-tip summary { color: #ff9a3c; cursor: pointer; font-size: .75rem; font-weight: 700; }
+        .room-tip .mpesa-tip-card { margin-top: 8px; border: 0; background: transparent; padding: 0; }
+        .room-tip .mpesa-tip-card h2 { font-size: .8rem; }
+        .room-tip .mpesa-tip-form { gap: 7px; }
+        .room-tip .mpesa-tip-form label { font-size: .65rem; }
+        .room-tip .mpesa-tip-form input { min-height: 38px; padding: 7px; }
+        .room-tip .mpesa-tip-presets button,.room-tip .mpesa-tip-submit { min-height: 34px; padding: 6px 9px; font-size: .62rem; }
+        .room-tip .mpesa-tip-disclosure,.room-tip .mpesa-tip-status,.room-tip .mpesa-tip-unavailable { font-size: .6rem; }
+        body.host-mode .room-tip { display: none; }
         @media(max-width:850px) {
             .room-layout, body.host-mode .room-layout { display: flex; min-height: calc(100vh - 52px); flex-direction: column; padding: 10px; }
             .video-area, body.host-mode .video-area { min-height: min(62vh, 500px); }
@@ -170,6 +180,12 @@
         </section>
 
         <aside class="room-sidebar">
+            {% if not is_host %}
+            <details class="room-tip">
+                <summary>Tip host with M-Pesa</summary>
+                {% include "streaming/_mpesa_tip_form.html" %}
+            </details>
+            {% endif %}
             <section id="chat-panel" class="chat-panel">
                 <div class="panel-heading">Chat</div>
                 <div id="chat-messages" class="chat-messages">

@@ -40,5 +40,8 @@
     </form>
     {% endif %}
   </section>
+  {% if user != video.owner %}
+    {% include "streaming/_mpesa_tip_form.html" %}
+  {% endif %}
 </main>
 {% endblock %}

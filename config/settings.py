@@ -230,3 +230,27 @@ CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME", "")
 CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY", "")
 CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET", "")
 VIDEO_UPLOAD_MAX_BYTES = 1024 * 1024 * 1024
+
+MPESA_ENVIRONMENT = os.getenv("MPESA_ENVIRONMENT", "sandbox").strip().lower()
+MPESA_API_BASE_URL = {
+    "sandbox": "https://sandbox.safaricom.co.ke",
+    "live": "https://api.safaricom.co.ke",
+    "production": "https://api.safaricom.co.ke",
+}.get(MPESA_ENVIRONMENT, "")
+MPESA_CONSUMER_KEY = os.getenv("MPESA_CONSUMER_KEY", "")
+MPESA_CONSUMER_SECRET = os.getenv("MPESA_CONSUMER_SECRET", "")
+MPESA_SHORTCODE = os.getenv("MPESA_SHORTCODE", "")
+MPESA_PASSKEY = os.getenv("MPESA_PASSKEY", "")
+MPESA_TRANSACTION_TYPE = os.getenv(
+    "MPESA_TRANSACTION_TYPE",
+    "CustomerPayBillOnline",
+)
+MPESA_CALLBACK_BASE_URL = os.getenv("MPESA_CALLBACK_BASE_URL", "").rstrip("/")
+MPESA_CALLBACK_TOKEN = os.getenv("MPESA_CALLBACK_TOKEN", "")
+MPESA_TIP_MIN_AMOUNT = int(os.getenv("MPESA_TIP_MIN_AMOUNT", "10"))
+MPESA_TIP_MAX_AMOUNT = int(os.getenv("MPESA_TIP_MAX_AMOUNT", "150000"))
+MPESA_TIP_PRESETS = tuple(
+    int(value.strip())
+    for value in os.getenv("MPESA_TIP_PRESETS", "50,100,500").split(",")
+    if value.strip()
+)

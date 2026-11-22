@@ -21,6 +21,7 @@ from .models import (
     CreatorFollow,
     FavoriteSession,
     LiveSession,
+    MpesaTip,
     Notification,
     PreviewComment,
     PreviewLike,
@@ -397,6 +398,34 @@ class LiveSessionWorkflowTests(TestCase):
         self.assertContains(response, "Lock room")
         self.assertContains(response, "Participants (")
 
+    @override_settings(
+        MPESA_API_BASE_URL="https://sandbox.safaricom.co.ke",
+        MPESA_CONSUMER_KEY="test-consumer-key",
+        MPESA_CONSUMER_SECRET="test-consumer-secret",
+        MPESA_SHORTCODE="174379",
+        MPESA_PASSKEY="test-passkey",
+        MPESA_CALLBACK_BASE_URL="https://radev.example",
+        MPESA_CALLBACK_TOKEN="test-callback-token",
+    )
+    def test_room_shows_tip_controls_to_live_participants(self):
+        self.session.status = "live"
+        self.session.preview_status = "recording"
+        self.session.host_recording_consented_at = timezone.now()
+        self.session.save(update_fields=[
+            "status",
+            "preview_status",
+            "host_recording_consented_at",
+        ])
+
+        response = self.client.post(
+            reverse("join_session", args=[self.session.room_name]),
+            {"recording_consent": "on"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Tip host with M-Pesa")
+        self.assertContains(response, 'value="live_session"')
+
     def test_room_participants_include_clickable_profile_and_avatar_data(self):
         self.session.status = "live"
         self.session.save(update_fields=["status"])
@@ -461,6 +490,29 @@ class LiveSessionWorkflowTests(TestCase):
         avatar_url = UserProfile.objects.get(user=self.viewer).avatar.url
         self.assertContains(response, avatar_url)
         self.assertContains(response, "View viewer's profile")
+
+    def test_session_detail_shows_full_thumbnail_without_cropping(self):
+        self.session.thumbnail = "stream_thumbnails/session-full.jpg"
+        self.session.save(update_fields=["thumbnail"])
+
+        response = self.client.get(
+            reverse("session_detail", args=[self.session.room_name]),
+        )
+
+        self.assertContains(
+            response,
+            '<img class="hero-session-image" src="/media/stream_thumbnails/session-full.jpg" alt="Python Bootcamp session image">',
+            html=False,
+        )
+        self.assertContains(response, "object-fit:contain")
+        self.assertContains(
+            response,
+            "grid-template-columns:minmax(120px,38%) minmax(0,1fr)",
+        )
+        self.assertContains(response, 'class="session-extra-details"')
+        self.assertContains(response, "About")
+        self.assertContains(response, "Participants")
+        self.assertContains(response, self.session.description)
 
     def test_participant_must_consent_before_entering_a_recorded_room(self):
         self.session.status = "live"
@@ -1053,3 +1105,278 @@ class VideoUploadWorkflowTests(TestCase):
             invalidate=True,
         )
         self.assertFalse(UploadedVideo.objects.filter(pk=video.pk).exists())
+
+
+@override_settings(
+    MPESA_API_BASE_URL="https://sandbox.safaricom.co.ke",
+    MPESA_CONSUMER_KEY="test-consumer-key",
+    MPESA_CONSUMER_SECRET="test-consumer-secret",
+    MPESA_SHORTCODE="174379",
+    MPESA_PASSKEY="test-passkey",
+    MPESA_TRANSACTION_TYPE="CustomerPayBillOnline",
+    MPESA_CALLBACK_BASE_URL="https://radev.example",
+    MPESA_CALLBACK_TOKEN="test-callback-token",
+    MPESA_TIP_MIN_AMOUNT=10,
+    MPESA_TIP_MAX_AMOUNT=150000,
+    MPESA_TIP_PRESETS=(50, 100, 500),
+)
+class MpesaTipWorkflowTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.creator = user_model.objects.create_user(
+            username="tip-creator",
+            password="test-password",
+        )
+        self.viewer = user_model.objects.create_user(
+            username="tip-viewer",
+            password="test-password",
+        )
+        self.video = UploadedVideo.objects.create(
+            owner=self.creator,
+            title="A video to tip",
+            cloudinary_public_id=f"radevlive/videos/user_{self.creator.pk}/{uuid.uuid4().hex}",
+            video_url="https://res.cloudinary.com/demo/video/upload/tip.mp4",
+            thumbnail_url="https://res.cloudinary.com/demo/video/upload/tip.jpg",
+            format="mp4",
+            size_bytes=1024,
+        )
+        self.session = LiveSession.objects.create(
+            host=self.creator,
+            title="A live session to tip",
+            status="live",
+        )
+        self.tip_data = {
+            "target_type": "video",
+            "target_id": self.video.pk,
+            "amount": "100",
+            "phone_number": "0712 345 678",
+        }
+
+    def _create_tip(self, **kwargs):
+        values = {
+            "sender": self.viewer,
+            "recipient": self.creator,
+            "recipient_name": "Tip Creator",
+            "target_type": "video",
+            "target_id": self.video.pk,
+            "target_title": self.video.title,
+            "amount": 100,
+            "merchant_request_id": "merchant-request-1",
+            "checkout_request_id": "checkout-request-1",
+        }
+        values.update(kwargs)
+        return MpesaTip.objects.create(**values)
+
+    def _callback(self, tip, *, result_code=0, amount=100):
+        return {
+            "Body": {
+                "stkCallback": {
+                    "MerchantRequestID": tip.merchant_request_id,
+                    "CheckoutRequestID": tip.checkout_request_id,
+                    "ResultCode": result_code,
+                    "ResultDesc": "The service request is processed successfully.",
+                    "CallbackMetadata": {
+                        "Item": [
+                            {"Name": "Amount", "Value": amount},
+                            {"Name": "MpesaReceiptNumber", "Value": "QXY123ABC"},
+                        ],
+                    },
+                },
+            },
+        }
+
+    def test_video_tip_starts_stk_and_normalizes_payer_phone(self):
+        self.client.force_login(self.viewer)
+        with patch(
+            "streaming.tip_views.initiate_stk_push",
+            return_value={
+                "merchant_request_id": "merchant-1",
+                "checkout_request_id": "checkout-1",
+                "customer_message": "Prompt sent",
+            },
+        ) as initiate:
+            response = self.client.post(
+                reverse("mpesa_tip_create"),
+                self.tip_data,
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "pending")
+        tip = MpesaTip.objects.get(checkout_request_id="checkout-1")
+        self.assertEqual(tip.sender, self.viewer)
+        self.assertEqual(tip.recipient, self.creator)
+        self.assertEqual(tip.amount, 100)
+        initiate.assert_called_once_with(tip, "254712345678")
+
+    def test_tip_rejects_self_tips_and_amounts_above_limit(self):
+        self.client.force_login(self.creator)
+        with patch("streaming.tip_views.initiate_stk_push") as initiate:
+            self_tip_response = self.client.post(
+                reverse("mpesa_tip_create"),
+                self.tip_data,
+            )
+            self.client.force_login(self.viewer)
+            over_limit_response = self.client.post(
+                reverse("mpesa_tip_create"),
+                {
+                    **self.tip_data,
+                    "target_id": self.video.pk,
+                    "amount": "150001",
+                },
+            )
+
+        self.assertEqual(self_tip_response.status_code, 400)
+        self.assertEqual(over_limit_response.status_code, 400)
+        self.assertFalse(MpesaTip.objects.exists())
+        initiate.assert_not_called()
+
+    def test_tip_rejects_invalid_phone_number(self):
+        self.client.force_login(self.viewer)
+        with patch("streaming.tip_views.initiate_stk_push") as initiate:
+            response = self.client.post(
+                reverse("mpesa_tip_create"),
+                {**self.tip_data, "phone_number": "not-a-phone"},
+            )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(MpesaTip.objects.exists())
+        initiate.assert_not_called()
+
+    def test_live_session_tip_targets_only_live_hosts(self):
+        self.client.force_login(self.viewer)
+        data = {
+            **self.tip_data,
+            "target_type": "live_session",
+            "target_id": self.session.pk,
+        }
+        with patch(
+            "streaming.tip_views.initiate_stk_push",
+            return_value={
+                "merchant_request_id": "merchant-live",
+                "checkout_request_id": "checkout-live",
+                "customer_message": "",
+            },
+        ) as initiate:
+            response = self.client.post(reverse("mpesa_tip_create"), data)
+
+        self.assertEqual(response.status_code, 200)
+        tip = MpesaTip.objects.get(checkout_request_id="checkout-live")
+        self.assertEqual(tip.target_type, "live_session")
+        self.assertEqual(tip.recipient, self.creator)
+        initiate.assert_called_once()
+
+        self.session.status = "ended"
+        self.session.save(update_fields=["status"])
+        ended_response = self.client.post(reverse("mpesa_tip_create"), data)
+        self.assertEqual(ended_response.status_code, 409)
+
+    def test_stk_push_uses_configured_shortcode_and_callback(self):
+        from . import mpesa
+
+        tip = self._create_tip()
+
+        class FakeResponse:
+            ok = True
+
+            def __init__(self, value):
+                self.value = value
+
+            def json(self):
+                return self.value
+
+        with (
+            patch(
+                "streaming.mpesa.requests.get",
+                return_value=FakeResponse({"access_token": "test-token"}),
+            ),
+            patch(
+                "streaming.mpesa.requests.post",
+                return_value=FakeResponse({
+                    "ResponseCode": "0",
+                    "MerchantRequestID": "merchant-2",
+                    "CheckoutRequestID": "checkout-2",
+                }),
+            ) as post,
+        ):
+            result = mpesa.initiate_stk_push(tip, "254712345678")
+
+        self.assertEqual(result["checkout_request_id"], "checkout-2")
+        args, kwargs = post.call_args
+        self.assertEqual(
+            args[0],
+            "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+        )
+        self.assertEqual(kwargs["json"]["BusinessShortCode"], "174379")
+        self.assertEqual(kwargs["json"]["Amount"], 100)
+        self.assertEqual(kwargs["json"]["PartyA"], "254712345678")
+        self.assertEqual(
+            kwargs["json"]["CallBackURL"],
+            "https://radev.example/payments/mpesa/callback/test-callback-token/",
+        )
+
+    def test_callback_verifies_payment_and_is_idempotent(self):
+        tip = self._create_tip()
+        url = reverse(
+            "mpesa_tip_callback",
+            kwargs={"token": "test-callback-token"},
+        )
+        with patch(
+            "streaming.tip_views.query_stk_push",
+            return_value={"ResultCode": "0"},
+        ) as query:
+            response = self.client.post(
+                url,
+                data=json.dumps(self._callback(tip)),
+                content_type="application/json",
+            )
+            duplicate_response = self.client.post(
+                url,
+                data=json.dumps(self._callback(tip)),
+                content_type="application/json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(duplicate_response.status_code, 200)
+        query.assert_called_once_with("checkout-request-1")
+        tip.refresh_from_db()
+        self.assertEqual(tip.status, "succeeded")
+        self.assertEqual(tip.payout_status, "unpaid")
+        self.assertEqual(tip.mpesa_receipt_number, "QXY123ABC")
+
+    def test_callback_does_not_mark_an_unverified_payment_as_successful(self):
+        tip = self._create_tip()
+        with patch(
+            "streaming.tip_views.query_stk_push",
+            return_value={"ResultCode": "1"},
+        ):
+            response = self.client.post(
+                reverse(
+                    "mpesa_tip_callback",
+                    kwargs={"token": "test-callback-token"},
+                ),
+                data=json.dumps(self._callback(tip)),
+                content_type="application/json",
+            )
+
+        self.assertEqual(response.status_code, 503)
+        tip.refresh_from_db()
+        self.assertEqual(tip.status, "pending")
+        self.assertIsNone(tip.mpesa_receipt_number)
+
+    def test_tip_forms_are_available_for_videos_and_live_sessions(self):
+        self.client.force_login(self.viewer)
+        video_response = self.client.get(
+            reverse("video_detail", args=[self.video.pk]),
+        )
+        session_response = self.client.get(
+            reverse("session_detail", args=[self.session.room_name]),
+        )
+
+        self.assertContains(video_response, "Tip tip-creator")
+        self.assertContains(video_response, 'value="video"')
+        self.assertContains(session_response, "Tip tip-creator")
+        self.assertContains(session_response, 'value="live_session"')
+        self.assertContains(
+            video_response,
+            "creator payouts are handled manually",
+        )

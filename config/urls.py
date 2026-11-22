@@ -11,6 +11,7 @@ urlpatterns = [
 
     path("", include(("core.urls", "core"), namespace="core")),
     path("videos/", include("streaming.video_urls")),
+    path("payments/", include("streaming.tip_urls")),
     path("streams/", include("streaming.urls")),
     path("chat/", include("chat.urls")),
 ]

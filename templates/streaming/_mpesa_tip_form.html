@@ -1,0 +1,111 @@
+<section class="mpesa-tip-card" aria-label="Tip {{ tip_recipient_name }} with M-Pesa">
+  <h2>Tip {{ tip_recipient_name }}</h2>
+  {% if user.is_authenticated %}
+    {% if mpesa_configured %}
+    <form class="mpesa-tip-form" method="post" action="{% url 'mpesa_tip_create' %}">
+      {% csrf_token %}
+      <input type="hidden" name="target_type" value="{{ tip_target_type }}">
+      <input type="hidden" name="target_id" value="{{ tip_target_id }}">
+      <div class="mpesa-tip-presets" aria-label="Suggested tip amounts">
+        {% for amount in tip_presets %}
+        <button type="button" data-tip-amount="{{ amount }}">KES {{ amount }}</button>
+        {% endfor %}
+      </div>
+      <label>
+        Amount (KES)
+        <input name="amount" type="number" min="{{ tip_min_amount }}" max="{{ tip_max_amount }}" step="1" required>
+      </label>
+      <label>
+        M-Pesa phone number
+        <input name="phone_number" type="tel" inputmode="tel" autocomplete="tel" placeholder="07XX XXX XXX" maxlength="16" required>
+      </label>
+      <p class="mpesa-tip-disclosure">
+        You’ll receive an M-Pesa prompt to confirm. Tips are collected by RADEV LIVE;
+        creator payouts are handled manually by the platform.
+      </p>
+      <button class="mpesa-tip-submit" type="submit">Tip with M-Pesa</button>
+      <p class="mpesa-tip-status" role="status" aria-live="polite"></p>
+    </form>
+    {% else %}
+    <p class="mpesa-tip-unavailable">M-Pesa tipping is not configured on this server yet.</p>
+    {% endif %}
+  {% else %}
+  <p class="mpesa-tip-unavailable">
+    <a href="{% url 'account_login' %}?next={{ request.get_full_path|urlencode }}">Log in</a>
+    to tip this creator.
+  </p>
+  {% endif %}
+</section>
+{% if user.is_authenticated and mpesa_configured %}
+<script>
+document.querySelectorAll(".mpesa-tip-form").forEach(form => {
+  const amountInput = form.querySelector("[name=amount]");
+  const status = form.querySelector(".mpesa-tip-status");
+  const setDisabled = disabled => {
+    form.querySelectorAll("input, button").forEach(element => {
+      element.disabled = disabled;
+    });
+  };
+
+  form.querySelectorAll("[data-tip-amount]").forEach(button => {
+    button.addEventListener("click", () => {
+      amountInput.value = button.dataset.tipAmount;
+      amountInput.focus();
+    });
+  });
+
+  async function checkTipStatus(url) {
+    for (let attempt = 0; attempt < 36; attempt += 1) {
+      await new Promise(resolve => window.setTimeout(resolve, 5000));
+      const response = await fetch(url, {credentials: "same-origin"});
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not check tip status.");
+      if (result.status === "succeeded") {
+        status.textContent = result.receipt
+          ? "Tip received. M-Pesa receipt: " + result.receipt
+          : "Tip received successfully.";
+        form.reset();
+        setDisabled(false);
+        return;
+      }
+      if (result.status === "failed") {
+        status.textContent = result.message || "The M-Pesa payment was not completed.";
+        setDisabled(false);
+        return;
+      }
+    }
+    status.textContent = "Still waiting for M-Pesa confirmation. Please don’t retry this tip yet.";
+  }
+
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!form.reportValidity()) return;
+    const formData = new FormData(form);
+    const csrfToken = form.querySelector("[name=csrfmiddlewaretoken]").value;
+    setDisabled(true);
+    status.textContent = "Sending M-Pesa payment request...";
+    try {
+      const response = await fetch(form.action, {
+        method: "POST",
+        headers: {"X-CSRFToken": csrfToken},
+        body: formData,
+        credentials: "same-origin"
+      });
+      const result = await response.json();
+      if (!response.ok && response.status !== 202) {
+        throw new Error(result.error || "Could not start the M-Pesa payment.");
+      }
+      status.textContent = result.message || "Check your phone for the M-Pesa prompt.";
+      if (result.status_url) {
+        await checkTipStatus(result.status_url);
+      } else {
+        setDisabled(false);
+      }
+    } catch (error) {
+      status.textContent = error.message;
+      setDisabled(false);
+    }
+  });
+});
+</script>
+{% endif %}

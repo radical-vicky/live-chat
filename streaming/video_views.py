@@ -20,6 +20,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.models import UserProfile
 from .forms import VideoUploadForm
+from .mpesa import tip_template_context, user_display_name
 from .models import UploadedVideo
 
 
@@ -262,7 +263,17 @@ def video_detail(request, video_id):
         view_count=F("view_count") + 1,
     )
     video.refresh_from_db(fields=["view_count"])
-    return render(request, "streaming/video_detail.html", {"video": video})
+    return render(
+        request,
+        "streaming/video_detail.html",
+        {
+            "video": video,
+            "tip_target_type": "video",
+            "tip_target_id": video.pk,
+            "tip_recipient_name": user_display_name(video.owner),
+            **tip_template_context(),
+        },
+    )
 
 
 @login_required

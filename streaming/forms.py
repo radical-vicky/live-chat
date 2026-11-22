@@ -1,6 +1,8 @@
 from django import forms
+from django.conf import settings
 from django.utils import timezone
 
+from .mpesa import normalize_phone_number
 from .models import LiveSession, UploadedVideo
 
 class LiveSessionForm(forms.ModelForm):
@@ -123,3 +125,26 @@ class VideoUploadForm(forms.ModelForm):
                 "placeholder": "What is this video about?",
             }),
         }
+
+
+class MpesaTipForm(forms.Form):
+    TARGET_CHOICES = [
+        ("video", "Video"),
+        ("live_session", "Live session"),
+    ]
+
+    target_type = forms.ChoiceField(choices=TARGET_CHOICES)
+    target_id = forms.IntegerField(min_value=1)
+    amount = forms.IntegerField(
+        min_value=settings.MPESA_TIP_MIN_AMOUNT,
+        max_value=settings.MPESA_TIP_MAX_AMOUNT,
+    )
+    phone_number = forms.CharField(max_length=16)
+
+    def clean_phone_number(self):
+        try:
+            return normalize_phone_number(
+                self.cleaned_data["phone_number"],
+            )
+        except ValueError as exc:
+            raise forms.ValidationError(str(exc)) from exc
