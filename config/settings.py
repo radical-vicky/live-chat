@@ -47,6 +47,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
 
+    # Cloudinary (Must be before staticfiles if configuring static storage, but here we only use it for media)
+    'cloudinary_storage',
+    'cloudinary',
+
     # Allauth
     'allauth',
     'allauth.account',
@@ -62,7 +66,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # Added for serving static files in production
+    'whitenoise.middleware.WhiteNoiseMiddleware', # Serves static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -128,11 +132,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
 
@@ -140,16 +141,25 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles' # Added for production collectstatic
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-# Whitenoise storage for static files
+# Cloudinary Configuration
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv("CLOUDINARY_CLOUD_NAME", ""),
+    'API_KEY': os.getenv("CLOUDINARY_API_KEY", ""),
+    'API_SECRET': os.getenv("CLOUDINARY_API_SECRET", ""),
+}
+
+# Storage Configuration
+# Default: Cloudinary for media (user uploads)
+# Staticfiles: Whitenoise for compressed static assets
 STORAGES = {
     "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
@@ -157,7 +167,7 @@ STORAGES = {
 }
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+
 
 ACCOUNT_FORMS = {
     'signup': 'accounts.forms.EntstreamSignupForm',
@@ -183,7 +193,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 
-LOGIN_REDIRECT_URL = '/dashboard/'  # Or 'core:dashboard'
+LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
 
 ACCOUNT_LOGIN_METHODS = {'email'}
@@ -195,7 +205,6 @@ ACCOUNT_SIGNUP_FIELDS = [
 ]
 
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
-
 ACCOUNT_UNIQUE_EMAIL = True
 
 # =====================================
