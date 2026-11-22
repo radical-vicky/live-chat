@@ -3,9 +3,33 @@
 {% block title %}Register — RADEV LIVE{% endblock %}
 
 {% block auth_content %}
+    <style>
+        /* Ensures the switch link never has an underline and matches the login page */
+        .auth-mobile-switch {
+            text-decoration: none !important;
+            display: block;
+            text-align: center;
+            width: 100%;
+            padding: 0.85rem 1.5rem;
+            margin-top: 0.75rem;
+            border-radius: 999px;
+            background-color: #27272A;
+            color: white;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border: 1px solid #3f3f46;
+            transition: background 0.2s;
+        }
+        .auth-mobile-switch:hover {
+            background-color: #3f3f46;
+            color: white;
+        }
+    </style>
+
     <form method="POST" action="{% url 'account_signup' %}">
         {% csrf_token %}
-        
+        <p style="margin-bottom: 1.15rem; color: #A1A1AA; font-size: .85rem;">Create an account to start hosting live sessions.</p>
+
         {% if form.non_field_errors %}
             <div class="errorlist" style="margin-bottom: 1rem;">
                 {{ form.non_field_errors }}
@@ -41,6 +65,8 @@
         {% endif %}
 
         <button type="submit" class="btn-submit">Register</button>
-        <a href="{% url 'account_login' %}" class="auth-mobile-switch">Log in</a>
+        
+        <!-- The "Log in" link now uses the styled button class without underlines -->
+        <a href="{% url 'account_login' %}" class="auth-mobile-switch">Already have an account? Log in</a>
     </form>
 {% endblock %}
